@@ -1,211 +1,206 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <title>Libreria RetroGiochi</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Retro Games Library</title>
   <style>
-    :root {
-      --bg: #0a0a0a;
-      --card: #181818;
-      --accent: #00aaff;
-      --text: #f0f0f0;
-      --muted: #999;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
-      background: var(--bg);
-      font-family: "Segoe UI", Roboto, sans-serif;
-      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+      color: #fff;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
 
     header {
+      text-align: center;
+      padding: 20px 10px;
+      background: #111;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
       position: sticky;
       top: 0;
-      background: #111;
-      padding: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
       z-index: 10;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
 
     header h1 {
-      flex: 1 1 100%;
-      text-align: center;
-      color: var(--accent);
-      font-size: 1.6em;
-      margin: 5px 0;
+      font-size: 1.8em;
+      margin: 0;
+      color: #00aaff;
     }
 
-    input, select {
-      padding: 10px;
-      border-radius: 8px;
+    .filters {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filters input, .filters select {
+      padding: 8px 12px;
       border: none;
-      outline: none;
-      background: var(--card);
-      color: var(--text);
+      border-radius: 6px;
       font-size: 1em;
-      width: 160px;
+      outline: none;
+      background: #222;
+      color: #fff;
     }
 
-    #gameGrid {
+    #gameList {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
       padding: 20px;
-      flex-grow: 1;
+      flex: 1;
     }
 
-    .game {
-      background: var(--card);
+    .game-card {
+      background: #111;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
       text-align: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
     }
 
-    .game:hover {
+    .game-card:hover {
       transform: scale(1.05);
-      box-shadow: 0 0 15px var(--accent);
+      box-shadow: 0 0 20px rgba(0,170,255,0.4);
     }
 
-    .game img {
+    .game-cover {
       width: 100%;
-      height: 150px;
-      object-fit: cover;
+      height: 100px;
+      object-fit: contain;
+      background: #000;
+      padding: 10px;
     }
 
-    .title {
-      padding: 8px;
+    .game-title {
+      font-size: 1em;
+      padding: 10px 5px 0;
+      font-weight: bold;
+      color: #fff;
+      height: 40px;
+      overflow: hidden;
+    }
+
+    .game-system {
       font-size: 0.9em;
-      color: var(--text);
+      color: #aaa;
+      padding-bottom: 10px;
     }
 
     footer {
       text-align: center;
       padding: 10px;
-      font-size: 0.9em;
-      color: var(--muted);
+      font-size: 0.8em;
       background: #111;
+      color: #666;
+    }
+
+    @media (min-width: 1200px) {
+      .game-cover {
+        height: 120px;
+      }
     }
   </style>
 </head>
 <body>
+
   <header>
-    <h1>🎮 RetroGiochi</h1>
-    <input type="text" id="search" placeholder="Cerca gioco...">
-    <select id="filter">
-      <option value="all">Tutti</option>
-      <option value="GBA">Game Boy Advance</option>
-      <option value="GBC">Game Boy Color</option>
-      <option value="GB">Game Boy</option>
-    </select>
+    <h1>🎮 Retro Games Library</h1>
+    <div class="filters">
+      <input type="text" id="search" placeholder="Cerca un gioco...">
+      <select id="systemFilter">
+        <option value="">Tutte le console</option>
+        <option value="GBA">Game Boy Advance</option>
+        <option value="GBC">Game Boy Color</option>
+        <option value="GB">Game Boy</option>
+      </select>
+    </div>
   </header>
 
-  <div id="gameGrid">Caricamento giochi...</div>
+  <main id="gameList"></main>
 
-  <footer>By Neurone01 · Powered by jsDelivr + SkyEmu</footer>
+  <footer>© 2025 Retro Emulator Project</footer>
 
-<script>
-const grid = document.getElementById("gameGrid");
-const searchInput = document.getElementById("search");
-const filterSelect = document.getElementById("filter");
-let allGames = [];
+  <script>
+    async function loadGames() {
+      try {
+        const res = await fetch('games.json');
+        const games = await res.json();
+        return games.filter(g => g && g.title && g.system && g.rom);
+      } catch (err) {
+        console.error('Errore nel caricamento di games.json:', err);
+        return [];
+      }
+    }
 
-async function loadLocalGames() {
-  try {
-    const res = await fetch("games.json");
-    const data = await res.json();
-    return data;
-  } catch (e) {
-    console.warn("Nessun games.json locale:", e);
-    return [];
-  }
-}
+    function getSystemLogo(system) {
+      switch (system.toUpperCase()) {
+        case 'GBA':
+          return 'https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg';
+        case 'GBC':
+          return 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg';
+        case 'GB':
+          return 'https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg';
+        default:
+          return 'https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg';
+      }
+    }
 
-// 🔹 Funzione universale per caricare da GitHub e filtrare EUR
-async function loadGitHubGames(folder, system) {
-  const covers = {
-    GBA: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
-    GBC: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg",
-    GB:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg"
-  };
-  try {
-    const res = await fetch(`https://api.github.com/repos/AlexBlackmore/roms/contents/${folder}`);
-    const files = await res.json();
-    return files
-      .filter(f => /\.(zip|gb|gbc|gba)$/i.test(f.name) && /(EUR|Europe)/i.test(f.name))
-      .map(f => ({
-        id: f.name.replace(/\W+/g, "_"),
-        title: f.name.replace(/\.(zip|gb|gbc|gba)$/i, ""),
-        system,
-        cover: covers[system],
-        rom: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${folder}/${encodeURIComponent(f.name)}`
-      }));
-  } catch (e) {
-    console.warn(`Errore nel caricamento da ${folder}:`, e);
-    return [];
-  }
-}
+    function createGameCard(game) {
+      const card = document.createElement('div');
+      card.className = 'game-card';
+      card.innerHTML = `
+        <img src="${getSystemLogo(game.system)}" alt="${game.system}" class="game-cover">
+        <div class="game-title">${game.title}</div>
+        <div class="game-system">${game.system}</div>
+      `;
+      card.onclick = () => {
+        window.location.href = `play.html?rom=${encodeURIComponent(game.rom)}&title=${encodeURIComponent(game.title)}`;
+      };
+      return card;
+    }
 
-function renderGames(list) {
-  grid.innerHTML = "";
-  if (!list.length) {
-    grid.innerHTML = "<p>Nessun gioco trovato 😕</p>";
-    return;
-  }
+    function renderGames(games) {
+      const container = document.getElementById('gameList');
+      container.innerHTML = '';
+      if (games.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:#888;">Nessun gioco trovato.</p>';
+        return;
+      }
+      games.forEach(game => container.appendChild(createGameCard(game)));
+    }
 
-  list.forEach(g => {
-    const card = document.createElement("div");
-    card.className = "game";
-    card.innerHTML = `
-      <img src="${g.cover || 'assets/placeholder.jpg'}" alt="${g.title}">
-      <div class="title">${g.title}</div>
-    `;
-    card.onclick = () => {
-      window.location.href = `play.html?rom=${encodeURIComponent(g.rom)}&title=${encodeURIComponent(g.title)}`;
-    };
-    grid.appendChild(card);
-  });
-}
+    async function init() {
+      const allGames = await loadGames();
+      const searchInput = document.getElementById('search');
+      const filterSelect = document.getElementById('systemFilter');
 
-function applyFilters() {
-  const term = searchInput.value.toLowerCase();
-  const system = filterSelect.value;
-  const filtered = allGames.filter(g =>
-    (system === "all" || g.system === system) &&
-    g.title.toLowerCase().includes(term)
-  );
-  renderGames(filtered);
-}
+      function updateList() {
+        const search = searchInput.value.toLowerCase();
+        const system = filterSelect.value;
+        const filtered = allGames.filter(g =>
+          g.title.toLowerCase().includes(search) &&
+          (!system || g.system === system)
+        );
+        renderGames(filtered);
+      }
 
-searchInput.addEventListener("input", applyFilters);
-filterSelect.addEventListener("change", applyFilters);
+      searchInput.addEventListener('input', updateList);
+      filterSelect.addEventListener('change', updateList);
 
-(async () => {
-  const local = await loadLocalGames();
-  const gba = await loadGitHubGames("gba", "GBA");
-  const gbc = await loadGitHubGames("gbc", "GBC");
-  const gb  = await loadGitHubGames("gb", "GB");
-  allGames = [...local, ...gba, ...gbc, ...gb];
-  renderGames(allGames);
-})();
-</script>
+      renderGames(allGames);
+    }
+
+    init();
+  </script>
 </body>
 </html>
