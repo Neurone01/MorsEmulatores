@@ -1,174 +1,267 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Play</title>
-<style>
-  :root{--bg:#050507;--panel:#0f1113;--muted:#9aa0a6;--accent:#1f6feb}
-  html,body{height:100%;margin:0;font-family:system-ui,Roboto,Arial;background:var(--bg);color:#eee}
-  header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#070709;border-bottom:1px solid #111}
-  header h1{margin:0;font-size:16px;color:var(--accent)}
-  #controls{display:flex;gap:8px}
-  button{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
-  button.ghost{background:transparent;border:1px solid #222;color:#ddd}
-  #canvas{display:block;width:100%;height:calc(100vh - 60px);background:#000;outline:none;border:none}
-  #info{padding:10px;font-size:13px;color:var(--muted);background:transparent}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Play</title>
+  <style>
+    :root{--bg:#0c0c0c;--panel:#141414;--accent:#0b84ff;--text:#eee}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .topbar{display:flex;align-items:center;gap:12px;padding:12px;background:var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.6)}
+    .title{font-weight:700}
+    .content{display:flex;height:calc(100% - 56px)}
+    #canvasWrap{flex:1;display:flex;align-items:center;justify-content:center;background:#000}
+    #canvas{width:720px;height:480px;background:#000;border:1px solid #222}
+    .side{width:360px;background:#0f0f0f;padding:12px;box-sizing:border-box;overflow:auto}
+    .progress{height:12px;background:#222;border-radius:6px;overflow:hidden;margin-top:8px}
+    .bar{height:100%;width:0;background:var(--accent)}
+    .muted{color:#9aa}
+    .hidden{display:none}
+    /* forcella: nascondi menu/emulator UI comuni */
+    .emu-menu,.menu,.ui,.settings,.context-menu,.in-game-menu{display:none !important;opacity:0 !important;pointer-events:none !important}
+  </style>
 </head>
 <body>
-  <header>
-    <h1 id="title">Caricamento…</h1>
-    <div id="controls">
-      <button id="saveBtn">💾 Scarica save</button>
-      <button id="backBtn" class="ghost">← Torna</button>
+  <div class="topbar">
+    <div class="title" id="gameTitle">Caricamento…</div>
+    <div style="flex:1"></div>
+    <button id="backBtn" class="btn" style="background:transparent;border:1px solid #333;color:var(--text);padding:6px 10px;border-radius:6px">⬅ Indietro</button>
+  </div>
+
+  <div class="content">
+    <div id="canvasWrap">
+      <!-- La canvas reale dell'emulatore (se è nell'HTML) dovrebbe avere id="canvas" -->
+      <canvas id="canvas"></canvas>
     </div>
-  </header>
 
-  <canvas id="canvas" tabindex="0"></canvas>
-  <div id="info"></div>
+    <div class="side">
+      <div><strong>Stato</strong></div>
+      <div id="status" class="muted">In attesa…</div>
 
-<script>
-/*
-  play.html
-  - legge ?rom=URL encodato
-  - impedisce fullscreen automatico dell'emulatore
-  - tenta rimuovere menu interni / overlay
-  - carica SkyEmu.js (remotamente o locale)
-*/
+      <div style="margin-top:12px"><strong>Download ROM</strong></div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+      <div id="pct" class="muted">0%</div>
 
-// utility
-const qs = new URLSearchParams(location.search);
-const romParam = qs.get('rom') || '';
-const titleParam = qs.get('title') || romParam.split('/').pop() || 'Gioco';
-document.getElementById('title').textContent = titleParam;
-const info = document.getElementById('info');
-const canvas = document.getElementById('canvas');
+      <div style="margin-top:12px"><strong>Debug / Log</strong></div>
+      <pre id="log" style="height:320px;overflow:auto;background:#070707;padding:8px;border-radius:6px;border:1px solid #222;color:#9f9;font-size:12px"></pre>
+    </div>
+  </div>
 
-function log(...a){ console.log('[PLAY]',...a) }
-function setInfo(s){ info.textContent = s; }
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id') || null;
+      const urlParam = params.get('url') || null;
 
-setInfo(romParam ? `ROM: ${romParam}` : 'Nessuna ROM selezionata');
+      const logEl = document.getElementById('log');
+      const statusEl = document.getElementById('status');
+      const pctEl = document.getElementById('pct');
+      const barEl = document.getElementById('bar');
+      const titleEl = document.getElementById('gameTitle');
 
-// PREVENZIONE fullscreen automatico (sovrascrive le API)
-(function preventFullscreen(){
-  const noop = ()=>Promise.resolve();
-  const proto = Element.prototype;
-  proto.requestFullscreen = noop;
-  proto.webkitRequestFullscreen = noop;
-  proto.mozRequestFullScreen = noop;
-  proto.msRequestFullscreen = noop;
-  document.documentElement.requestFullscreen = noop;
-  document.exitFullscreen = ()=>Promise.resolve();
-  log('API fullscreen sovrascritte');
-})();
+      function log(...args){ console.log(...args); logEl.textContent += args.join(' ') + '\n'; logEl.scrollTop = logEl.scrollHeight; }
+      function setStatus(t){ statusEl.textContent = t; log('[STATUS] '+t) }
+      function setProgress(n){ barEl.style.width = Math.round(n*100) + '%'; pctEl.textContent = Math.round(n*100) + '%' }
 
-// Blocca tasti che aprono menu degli emulatori
-window.addEventListener('keydown', e=>{
-  const block = ['Escape','F1','F2','F10','F11','F12','ContextMenu','Insert'];
-  // Inoltre blocca combinazioni comuni (start+select via keyboard non standard, ma proviamo a bloccare Ctrl+Shift, Alt+S ecc.)
-  if(block.includes(e.key) || (e.ctrlKey && e.shiftKey) || (e.altKey && e.key.toLowerCase()==='s')) {
-    e.preventDefault(); e.stopImmediatePropagation();
-    log('Bloccato tasto:', e.key);
-  }
-});
-
-// Rimuovi menu/overlay creati dinamicamente
-const suspicious = ['menu','overlay','settings','options','retroarch','pause','resume','skyemu','sky-emulator','contextmenu'];
-const observer = new MutationObserver(muts=>{
-  for(const m of muts){
-    for(const n of m.addedNodes){
-      if(n.nodeType !== 1) continue;
-      const id=(n.id||'').toLowerCase(), cls=(n.className||'').toLowerCase(), txt=(n.textContent||'').toLowerCase();
-      if(suspicious.some(w=>id.includes(w)||cls.includes(w)||txt.includes(w))){
-        try{ n.remove(); log('Rimosso overlay/menu:', id||cls||txt.slice(0,30)) }catch(e){}
+      // Blocca fullscreen e tasti
+      function preventFullscreen(){
+        // override common requests
+        window.requestFullscreen = ()=>{ log('requestFullscreen bloccato'); return null; };
+        Element.prototype.requestFullscreen = function(){ log('element.requestFullscreen bloccato'); };
+        // blocco F11 / ESC
+        window.addEventListener('keydown', e => {
+          if(e.key === 'F11' || e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); log('Tasto fullscreen/esc bloccato: '+e.key) }
+        }, {capture:true});
+        // se c'è Module, impediamo richiesta fullscreen lato Emscripten
+        if(!window.Module) window.Module = {};
+        window.Module['requestFullscreen'] = ()=>{ log('Module.requestFullscreen bloccato'); return 0; };
       }
-      // rimuovi discendenti sospetti
-      for(const c of n.querySelectorAll?.('*')||[]){
-        const id2=(c.id||'').toLowerCase(), cls2=(c.className||'').toLowerCase(), txt2=(c.textContent||'').toLowerCase();
-        if(suspicious.some(w=>id2.includes(w)||cls2.includes(w)||txt2.includes(w))){
-          try{ c.remove(); }catch(e){}
+      preventFullscreen();
+
+      // rimuove nodi HTML comunemente usati per menu
+      function removeEmuUI(){
+        const selectors = ['.emu-menu','.menu','.ui','#menu','#settings','.in-game-menu','.context-menu'];
+        selectors.forEach(sel => { document.querySelectorAll(sel).forEach(n=>{ n.remove(); log('rimosso: '+sel) })});
+        // nascondi ulteriori potenziali elementi dinamici
+        const style = document.createElement('style');
+        style.textContent = `${selectors.join(',')} { display:none !important; }`;
+        document.head.appendChild(style);
+      }
+      removeEmuUI();
+
+      // chiamata principale
+      (async function main(){
+        try{
+          setStatus('Preparazione...');
+          let game = null;
+          if(id){
+            setStatus('Caricamento games.json per trovare l\'id: '+id);
+            const r = await fetch('games.json', {cache:'no-store'});
+            if(!r.ok) throw new Error('games.json non trovato');
+            const games = await r.json();
+            game = games.find(g => g.id === id);
+            if(!game) throw new Error('Gioco non trovato per id: '+id);
+            titleEl.textContent = game.title || game.id;
+          } else if(urlParam){
+            game = { id: 'direct', title: 'ROM diretta', rom: urlParam, system: 'gba' };
+            titleEl.textContent = 'ROM diretta';
+          } else {
+            setStatus('Nessun id/url fornito');
+            throw new Error('Nessun id/url fornito nella querystring');
+          }
+
+          // Ottieni l'URL della rom
+          const romUrl = game.rom || game.url || game.src;
+          if(!romUrl) throw new Error('Nessun campo "rom" trovato in games.json per questo gioco');
+
+          setStatus('Download ROM da: ' + romUrl);
+          const arrayBuffer = await downloadWithProgress(romUrl, (p) => { setProgress(p); });
+          setStatus('Download completato (' + formatBytes(arrayBuffer.byteLength) + ')');
+
+          // proviamo a mettere la ROM in MEMFS (FS) se disponibile
+          const filename = determineFileNameFromUrl(romUrl) || (game.id + '.rom');
+          const fsPath = '/offline/' + filename;
+          const uint8 = new Uint8Array(arrayBuffer);
+
+          if(typeof FS !== 'undefined' && FS && FS.writeFile){
+            setStatus('Scrivo ROM in MEMFS: ' + fsPath);
+            try{
+              try{ // cancella se esiste
+                if(FS.analyzePath(fsPath).exists) FS.unlink(fsPath);
+              }catch(e){}
+              FS.writeFile(fsPath, uint8, { canOwn: true });
+              log('FS.writeFile OK: ' + fsPath);
+            }catch(e){
+              log('FS.writeFile fallita: ', e);
+            }
+            // se IDBFS è montato su /offline e serve sincronizzare:
+            try{
+              if(FS.syncfs){
+                setStatus('Sincronizzo MEMFS/IDBFS…');
+                await new Promise((res, rej)=> FS.syncfs(false, (err)=> err ? rej(err) : res()));
+                log('syncfs OK');
+              }
+            }catch(e){
+              log('syncfs errore', e);
+            }
+          } else {
+            log('FS non disponibile, scrivo blobURL');
+          }
+
+          // Proviamo a lanciare l'emulatore in vari modi comuni:
+          setStatus('Tentativo avvio emulatore (strategie multiple)');
+          const started = await tryStartEmulator({ game, romUrl, fsPath, uint8, filename });
+          if(started){
+            setStatus('Emulatore avviato ✔️');
+          } else {
+            setStatus('Nessuna strategia di avvio automatica ha funzionato — vedi log. Potrebbe essere necessario adattare il nome della funzione di avvio dell\'emulatore.');
+            log('Nessuna strategia di avvio automatica ha avuto successo. Se sai il nome della funzione JS/WASM che il port espone (es. startROMFromPath, load_rom, launchGameFromFS, ecc), modificarla in play.html nella funzione tryStartEmulator.');
+          }
+
+        }catch(err){
+          setStatus('ERRORE: ' + (err && err.message ? err.message : err));
+          log('ERRORE: ', err);
         }
+      })();
+
+      // -- funzioni di supporto --
+
+      function determineFileNameFromUrl(u){
+        try{
+          const parsed = new URL(u);
+          const name = parsed.pathname.split('/').pop();
+          return name || null;
+        }catch(e){ return null; }
       }
-    }
-  }
-});
-observer.observe(document.body,{childList:true,subtree:true});
-log('Observer overlay attivo');
 
-// Disabilita contextmenu
-window.addEventListener('contextmenu', e=>{ e.preventDefault(); e.stopImmediatePropagation(); });
-
-// Pulsanti
-document.getElementById('backBtn').addEventListener('click', ()=> location.href='index.html');
-document.getElementById('saveBtn').addEventListener('click', ()=>{
-  // Tentativo: scarica file save presumibilmente in /offline/<nome>.sav
-  try{
-    const romName = (qs.get('title') || romParam.split('/').pop() || 'save').replace(/\s+/g,'_');
-    const savPath = '/offline/' + romName + '.sav';
-    if(!window.Module?.FS) throw new Error('Emulatore non inizializzato');
-    const data = Module.FS.readFile(savPath);
-    const blob = new Blob([data], {type:'application/octet-stream'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = romName + '.sav'; a.click();
-  }catch(e){
-    alert('Salvataggio non disponibile o non trovato.');
-    console.warn(e);
-  }
-});
-
-// Carica SkyEmu (modifica l'URL se preferisci la versione locale)
-function loadEmuScript(src){
-  return new Promise((res, rej)=>{
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = ()=> { log('SkyEmu.js caricato'); res(); };
-    s.onerror = (e)=> rej(e);
-    document.body.appendChild(s);
-  });
-}
-
-// Config Module per l'emulatore (assume SkyEmu compatibile con Module pattern)
-window.Module = window.Module || {};
-Module.canvas = canvas;
-Module.print = (x)=>log(x);
-Module.printErr = (x)=>log('ERR:',x);
-Module.arguments = romParam ? [romParam] : [];
-Module.noInitialRun = false; // SkyEmu potrebbe lanciare subito
-
-// Se vuoi caricare una versione locale, sostituisci l'URL con './SkyEmu.js'
-const remoteScript = 'https://web.skyemu.app/SkyEmu.js';
-if(!romParam){
-  setInfo('Errore: nessuna ROM specificata in ?rom=');
-} else {
-  setInfo('Caricamento emulatore e ROM...');
-  loadEmuScript(remoteScript).then(()=> {
-    setInfo('Emulatore caricato — avvio in corso...');
-    // Se SkyEmu si aspetta Module.arguments, lo userà. Alcuni moduli iniziano automaticamente.
-    // In caso l'emulatore esponga una funzione per caricare la rom a runtime, prova a chiamarla:
-    try{
-      // Esempio generico, se esiste una API loadROM(URL)
-      if(typeof window.SkyEmu !== 'undefined' && typeof window.SkyEmu.loadROM === 'function'){
-        window.SkyEmu.loadROM(romParam);
-        log('SkyEmu.loadROM chiamato con', romParam);
-      } else {
-        log('Nessuna SkyEmu.loadROM API rilevata — l\'emulatore potrebbe usare Module.arguments');
+      function formatBytes(n){
+        if(n<1024) return n+' B';
+        if(n<1024*1024) return (n/1024).toFixed(1)+' KB';
+        return (n/1024/1024).toFixed(2)+' MB';
       }
-    }catch(e){
-      console.warn(e);
-    }
-  }).catch(err=>{
-    console.error('Errore caricamento SkyEmu.js', err);
-    setInfo('Errore nel caricamento di SkyEmu.js');
-    alert('Impossibile caricare SkyEmu.js. Controlla la connessione o usa la versione locale.');
-  });
-}
 
-// Blocca overlay se appare dopo l'inizializzazione (ulteriore tentativo)
-setTimeout(()=> {
-  document.querySelectorAll?.('[role="dialog"],.menu,.overlay,.ui-menu,.emu-menu').forEach(n=>n.remove());
-}, 1000);
+      async function downloadWithProgress(url, onProgress){
+        const r = await fetch(url, { mode: 'cors' });
+        if(!r.ok) throw new Error('Impossibile scaricare ROM: ' + r.status + ' ' + r.statusText);
+        if(!r.body) {
+          // fallback se response.body non disponibile
+          const ab = await r.arrayBuffer();
+          onProgress(1);
+          return ab;
+        }
+        const reader = r.body.getReader();
+        const contentLength = +r.headers.get('Content-Length') || 0;
+        let received = 0;
+        const chunks = [];
+        while(true){
+          const {done, value} = await reader.read();
+          if(done) break;
+          chunks.push(value);
+          received += value.length;
+          onProgress(contentLength ? (received / contentLength) : Math.min(0.99, received / (1024*1024))); // if unknown total, show growing progress
+        }
+        const ab = new Uint8Array(received);
+        let offset = 0;
+        for(const c of chunks){
+          ab.set(c, offset);
+          offset += c.length;
+        }
+        onProgress(1);
+        return ab.buffer;
+      }
 
-</script>
-</body>
-</html>
+      async function tryStartEmulator({game, romUrl, fsPath, uint8, filename}){
+        // STRATEGIA A: se esiste una funzione global nota, chiama direttamente (possibili nomi comuni)
+        const knownFns = [
+          'launchGame', 'loadROM', 'loadRom', 'startROM', 'startRom',
+          'loadROMFromURL', 'launchFromURL', 'load_rom', 'launch_from_fs',
+          'startEmulatorWithRom', 'start_game', 'runFromPath'
+        ];
+        for(const name of knownFns){
+          const fn = window[name] || (window.Module && window.Module[name]);
+          if(typeof fn === 'function'){
+            try{
+              log('Chiamo funzione globale nota: ' + name + ' (url passed)');
+              const res = fn(romUrl, fsPath, filename);
+              return true;
+            }catch(e){ log('Errore chiamando '+name, e) }
+          }
+        }
+
+        // STRATEGIA B: se Module.ccall è disponibile e abbiamo scritto in FS, proviamo a chiamare funzioni WASM note
+        if(window.Module && typeof Module.ccall === 'function'){
+          // nomi WASM possibili (adatta se sai il nome reale)
+          const possible = ['load_rom_from_path','load_rom','run_with_rom','run_rom','launch_from_fs','se_load_settings','se_load_rom'];
+          for(const wasmName of possible){
+            try{
+              // NB: molti port espongono funzioni diverse; qui proviamo con stringa path se scritto in FS
+              const exist = Module[wasmName] || Module['_' + wasmName];
+              // In generale ccall ritorna 0/1 oppure void
+              log('Provo Module.ccall("' + wasmName + '", ...)');
+              try{
+                Module.ccall(wasmName, 'number', ['string'], [fsPath]);
+                log('Module.ccall('+wasmName+') invocato con path', fsPath);
+                return true;
+              }catch(e){
+                // prova senza FS path (magari la funzione vuole URL)
+                try{
+                  Module.ccall(wasmName, 'number', ['string'], [romUrl]);
+                  return true;
+                }catch(e2){
+                  // ignora
+                }
+              }
+            }catch(e){
+              log('Module.ccall('+wasmName+') non disponibile o fallita', e);
+            }
+          }
+        }
+
+        // STRATEGIA C: se l'emulatore accetta blob URL (cioè una <input file> virtuale / API), creiamo un blob URL e proviamo a passarla
+        try{
+          const blob = new Blob([uint8], { type: 'application/octet-stream' });
+          const blobUrl = URL.createObjectURL(blob);
+          log('Created blob URL for ROM:', blobUrl);
+
+          // prova a inserire un <a> o chiamare funzioni che prendono URL
+          for(const name of ['loadROMFromURL',]()
