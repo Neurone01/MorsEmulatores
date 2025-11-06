@@ -1,187 +1,72 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Lista Giochi</title>
-<style>
-  :root{--bg:#0b0b0b;--card:#0f1113;--muted:#9aa0a6;--accent:#1f6feb}
-  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#eee}
-  header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#0a0a0a;border-bottom:1px solid #111}
-  h1{margin:0;font-size:18px;color:var(--accent)}
-  #search{min-width:260px;padding:8px;border-radius:8px;border:1px solid #222;background:#0c0c0c;color:#ddd}
-  main{padding:12px;display:grid;grid-template-columns:1fr;gap:12px;height:calc(100% - 64px);overflow:auto}
-  .toolbar{display:flex;gap:8px;align-items:center}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-  .card{background:var(--card);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:120px}
-  .thumb{height:120px;border-radius:6px;object-fit:cover;background:#000}
-  .meta{display:flex;justify-content:space-between;align-items:center}
-  .title{font-weight:600}
-  .sys{font-size:12px;color:var(--muted);border:1px solid #222;padding:4px 6px;border-radius:6px}
-  .actions{display:flex;gap:8px}
-  button{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
-  button.ghost{background:transparent;border:1px solid #222;color:#ddd}
-  #status{color:var(--muted);font-size:13px}
-  footer{padding:8px 16px;color:var(--muted);font-size:13px;border-top:1px solid #111;background:#070707}
-  @media (max-width:520px){.thumb{height:90px}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seleziona gioco</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;padding:20px;background:#111;color:#eee}
+    h1{margin:0 0 10px 0}
+    .games{display:grid;grid-template-columns: repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .card{background:#1b1b1b;border:1px solid #2b2b2b;padding:12px;border-radius:8px}
+    .thumb{height:120px;background:#222;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#888;margin-bottom:8px;overflow:hidden}
+    .title{font-weight:600}
+    .meta{font-size:0.95rem;color:#aaa}
+    .btn{display:inline-block;margin-top:8px;padding:8px 10px;border-radius:6px;border:0;background:#0b84ff;color:white;text-decoration:none}
+    .url-form{margin-top:18px;padding:10px;background:#0b0b0b;border-radius:8px;border:1px solid #222}
+    label{display:block;margin-bottom:8px;color:#ddd}
+    input[type="text"]{width:100%;padding:8px;border-radius:6px;border:1px solid #333;background:#111;color:#eee}
+  </style>
 </head>
 <body>
-  <header>
-    <h1>La tua raccolta</h1>
-    <div class="toolbar">
-      <input id="search" placeholder="Cerca titolo / sistema..." />
-      <select id="filter">
-        <option value="">Tutti i sistemi</option>
-      </select>
-    </div>
-  </header>
+  <h1>Scegli un gioco</h1>
+  <div id="list" class="games">Caricamento giochi…</div>
 
-  <main>
-    <div id="status">Caricamento games.json…</div>
-    <div id="grid" class="grid" aria-live="polite"></div>
-  </main>
+  <div class="url-form">
+    <label>Carica URL ROM direttamente (CORS richiesto):</label>
+    <input id="directUrl" type="text" placeholder="https://archive.org/…/nome.gba" />
+    <a id="playDirect" class="btn" href="#">Gioca URL diretto</a>
+  </div>
 
-  <footer>
-    <span id="count">0 giochi</span>
-  </footer>
-
-<script>
-(() => {
-  const grid = document.getElementById('grid');
-  const status = document.getElementById('status');
-  const count = document.getElementById('count');
-  const search = document.getElementById('search');
-  const filter = document.getElementById('filter');
-
-  let games = [];
-
-  function setStatus(s){ status.textContent = s; }
-
-  function safeUrl(url){
-    if(!url) return '';
-    // se è relativa, lasciarla così (assumeremo che le rom siano servite dallo stesso server)
-    return url;
-  }
-
-  function buildCard(game){
-    const c = document.createElement('div');
-    c.className = 'card';
-    const thumb = document.createElement('img');
-    thumb.className = 'thumb';
-    thumb.alt = game.title;
-    thumb.src = safeUrl(game.thumb || ''); // se mancante mostra sfondo nero
-    thumb.onerror = ()=>{ thumb.src=''; thumb.style.background='#020202' };
-    c.appendChild(thumb);
-
-    const t = document.createElement('div');
-    t.className = 'title';
-    t.textContent = game.title || 'Senza titolo';
-    c.appendChild(t);
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    const sys = document.createElement('div');
-    sys.className = 'sys';
-    sys.textContent = game.system || 'Unknown';
-    meta.appendChild(sys);
-
-    const actions = document.createElement('div');
-    actions.className = 'actions';
-    const play = document.createElement('button');
-    play.textContent = '▶ Gioca';
-    play.addEventListener('click', ()=> startGame(game));
-    actions.appendChild(play);
-
-    const info = document.createElement('button');
-    info.className = 'ghost';
-    info.textContent = 'Info';
-    info.addEventListener('click', ()=> alert(`${game.title}\nSistema: ${game.system}\nROM: ${game.rom || '—'}\nNote: ${game.notes||''}`));
-    actions.appendChild(info);
-
-    meta.appendChild(actions);
-    c.appendChild(meta);
-
-    return c;
-  }
-
-  function render(list){
-    grid.innerHTML='';
-    if(!list.length){
-      setStatus('Nessun gioco trovato.');
-      count.textContent = '0 giochi';
-      return;
+  <script>
+    async function loadList(){
+      try{
+        const r = await fetch('games.json', {cache: 'no-store'});
+        if(!r.ok) throw new Error('games.json non trovato');
+        const games = await r.json();
+        render(games);
+      }catch(err){
+        document.getElementById('list').innerText = 'Errore caricamento games.json: ' + err;
+      }
     }
-    setStatus('');
-    for(const g of list) grid.appendChild(buildCard(g));
-    count.textContent = `${list.length} gioco${list.length>1?'i':''}`;
-  }
 
-  function startGame(game){
-    // Passiamo la rom come query param. Url encodato.
-    if(!game.rom){
-      alert('ROM non impostata per questo gioco');
-      return;
+    function render(games){
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      for(const g of games){
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="thumb">${g.thumbnail?`<img src="${g.thumbnail}" style="max-width:100%;height:100%;object-fit:cover">`:`<span style="font-size:0.9rem">${g.system.toUpperCase()}</span>`}</div>
+          <div class="title">${escapeHtml(g.title)}</div>
+          <div class="meta">${escapeHtml(g.system)} — ${g.id}</div>
+          <a class="btn" href="play.html?id=${encodeURIComponent(g.id)}">Gioca</a>
+        `;
+        list.appendChild(card);
+      }
     }
-    const url = `play.html?rom=${encodeURIComponent(game.rom)}&title=${encodeURIComponent(game.title||'Gioco')}`;
-    window.location.href = url;
-  }
 
-  function populateFilter(){
-    const systems = Array.from(new Set(games.map(g=>g.system||'Unknown'))).sort();
-    filter.innerHTML = '<option value="">Tutti i sistemi</option>';
-    for(const s of systems){
-      const o = document.createElement('option');
-      o.value = s;
-      o.textContent = s;
-      filter.appendChild(o);
-    }
-  }
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  function applyFilterAndSearch(){
-    const q = search.value.trim().toLowerCase();
-    const f = filter.value;
-    const filtered = games.filter(g=>{
-      if(f && (g.system||'').toLowerCase()!==f.toLowerCase()) return false;
-      if(!q) return true;
-      return (g.title||'').toLowerCase().includes(q) ||
-             (g.system||'').toLowerCase().includes(q) ||
-             (g.notes||'').toLowerCase().includes(q);
+    document.getElementById('playDirect').addEventListener('click', (e)=>{
+      e.preventDefault();
+      const url = document.getElementById('directUrl').value.trim();
+      if(!url){alert('Inserisci un URL valido');return}
+      // reindirizza a play con param 'url'
+      window.location.href = 'play.html?url=' + encodeURIComponent(url);
     });
-    render(filtered);
-  }
 
-  // Carica games.json
-  fetch('games.json', {cache: 'no-cache'}).then(r=>{
-    if(!r.ok) throw new Error('games.json non trovato');
-    return r.json();
-  }).then(data=>{
-    if(!Array.isArray(data)) throw new Error('games.json: formato non valido');
-    games = data;
-    populateFilter();
-    applyFilterAndSearch();
-    setStatus('');
-  }).catch(err=>{
-    console.error(err);
-    setStatus('Errore nel caricamento di games.json — controlla che esista nella stessa cartella.');
-  });
-
-  // event listeners
-  search.addEventListener('input', ()=> applyFilterAndSearch());
-  filter.addEventListener('change', ()=> applyFilterAndSearch());
-
-  // supporto drag&drop: trascina ROM direttamente sulla pagina per giocare
-  window.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
-  window.addEventListener('drop', e=>{
-    e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if(!f) return;
-    // Se l'utente trascina una ROM locale, salviamola in /offline via File API non possibile dal browser puro
-    // Per ora apriamo un prompt con istruzioni
-    alert('Per ora: trascinare una ROM non la carica automaticamente. Copia il file nella cartella "roms/" del sito o aggiorna games.json con la path corretta.');
-  });
-
-})();
-</script>
+    loadList();
+  </script>
 </body>
 </html>
