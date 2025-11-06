@@ -1,214 +1,252 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SkyEmu Web Arcade</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: #0a0a0a;
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background: linear-gradient(90deg, #003a77, #00aaff);
-      padding: 15px;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      letter-spacing: 1px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    }
-
-    .controls {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 15px 0;
-    }
-
-    .controls input, .controls select {
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      font-size: 1rem;
-    }
-
-    .controls input {
-      width: 200px;
-      max-width: 300px;
-    }
-
-    .controls select {
-      background: #111;
-      color: #00aaff;
-      cursor: pointer;
-      border: 1px solid #00aaff;
-      transition: 0.2s;
-    }
-
-    .controls select:hover {
-      background: #00aaff;
-      color: #fff;
-    }
-
-    .game-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
-      padding: 20px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .game-card {
-      background: #111;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      text-align: center;
-    }
-
-    .game-card:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px #00aaff;
-    }
-
-    .game-card img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-    }
-
-    .game-card h3 {
-      margin: 10px 0 5px;
-      font-size: 1.1rem;
-    }
-
-    .game-card p {
-      margin: 0;
-      color: #aaa;
-    }
-
-    .game-card button {
-      margin: 10px 0 15px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: none;
-      background: #00aaff;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .game-card button:hover {
-      background: #007acc;
-    }
-
-    footer {
-      margin-top: auto;
-      padding: 10px;
-      text-align: center;
-      color: #aaa;
-      font-size: 0.9rem;
-    }
-
-    .loading {
-      text-align: center;
-      color: #888;
-      margin-top: 40px;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SkyEmu — Launcher</title>
+<style>
+  :root{--bg:#0f1115;--card:#17181c;--accent:#3aa0ff;--muted:#9aa3b2;color-scheme:dark}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#0b0c0f, #0f1115);color:#e6eef6}
+  .wrap{max-width:980px;margin:28px auto;padding:18px}
+  header{display:flex;align-items:center;gap:16px}
+  header h1{margin:0;font-size:20px}
+  .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.6);margin-top:14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  button{background:var(--accent);border:none;color:#062230;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--muted);font-weight:500}
+  input[type=file]{display:none}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .list{margin-top:12px}
+  .rom-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:6px;background:rgba(255,255,255,.02);margin-bottom:8px}
+  .small{font-size:13px;color:var(--muted)}
+  #log{height:140px;overflow:auto;background:#06070a;border:1px solid rgba(255,255,255,.03);padding:8px;border-radius:6px;font-family:monospace;font-size:12px}
+  a.link{color:var(--accent);text-decoration:none}
+  footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:640px){.row{flex-direction:column}}
+</style>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <img src="" alt="" style="width:48px;height:48px;border-radius:8px;background:linear-gradient(90deg,#3aa0ff,#7ce0ff)" />
+    <div>
+      <h1>SkyEmu — Launcher</h1>
+      <div class="small">Carica ROM, sincronizza con storage offline e avvia l'emulatore</div>
+    </div>
+  </header>
 
-  <header>🎮 SkyEmu Web Arcade</header>
+  <div class="card" id="mainCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div class="small">Azione rapida</div>
+        <div class="controls" style="margin-top:8px">
+          <label><button id="uploadBtn">📁 Carica ROM (locale)</button></label>
+          <input id="fileInput" type="file" accept=".zip,.nes,.sfc,.bin,.gba,.rom,.zip" />
+          <button id="initFsBtn" class="ghost">⚙️ Init / Sync IDBFS</button>
+          <button id="listBtn" class="ghost">📂 Mostra ROM salvate</button>
+          <button id="openFolderBtn" class="ghost">🔎 Apri cartella /offline</button>
+        </div>
+      </div>
 
-  <div class="controls">
-    <input type="text" id="search" placeholder="Cerca un gioco...">
-    <select id="filterPlatform">
-      <option value="all">Tutte le piattaforme</option>
-      <option value="GBA">Game Boy Advance</option>
-      <option value="GBC">Game Boy Color</option>
-      <option value="GB">Game Boy</option>
-      <option value="NDS">Nintendo DS</option>
-    </select>
+      <div>
+        <div class="small">RetroAchievements / RA</div>
+        <div style="margin-top:8px" class="controls">
+          <button id="raRegisterBtn" class="ghost">Registrati RA</button>
+          <button id="driveLoginBtn" class="ghost">Login Drive (OAuth)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="small">ROM salvate (<span id="romCount">0</span>)</div>
+      <div class="list" id="romList"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="small">Log / stato</div>
+      <pre id="log">Pronto. Premi "Init / Sync IDBFS" la prima volta per caricare la cartella /offline.</pre>
+    </div>
   </div>
 
-  <div id="gameList" class="game-list"></div>
-  <div id="loading" class="loading">Caricamento giochi...</div>
+  <footer>
+    <div>Files: <span id="fileInfo">SkyEmu.js richiesto nella stessa cartella</span></div>
+  </footer>
+</div>
 
-  <footer>© 2025 SkyEmu Web Arcade</footer>
+<script>
+/* -------------------------
+   Funzioni utili locali
+   ------------------------- */
+const $ = sel => document.querySelector(sel);
+const logEl = document.getElementById('log');
+function log(...args){ logEl.textContent += '\\n' + args.join(' '); logEl.scrollTop = logEl.scrollHeight; }
+function err(...args){ log('ERRORE:', ...args); }
 
-  <script>
-  let games = [];
+/* -------------------------
+   Stato e inizializzazione
+   ------------------------- */
+let ModuleReady = false;
+let hasFS = false;
 
-  const listContainer = document.getElementById("gameList");
-  const searchInput = document.getElementById("search");
-  const platformFilter = document.getElementById("filterPlatform");
-  const loadingEl = document.getElementById("loading");
-
-  async function loadGames() {
-    try {
-      const res = await fetch("games.json");
-      if (!res.ok) throw new Error("Impossibile caricare games.json");
-      games = await res.json();
-      renderGames();
-    } catch (err) {
-      loadingEl.textContent = "Errore nel caricamento dei giochi 😢";
-      console.error(err);
+function safeCall(fnName, ...args){
+  try{
+    if(typeof window[fnName] === 'function'){
+      return window[fnName](...args);
+    } else if(Module && typeof Module[fnName] === 'function'){
+      return Module[fnName](...args);
+    } else if(Module && typeof Module.ccall === 'function'){
+      // fallback: ccall a funzione C esportata (se esiste)
+      try { Module.ccall(fnName); } catch(e) {}
+    } else {
+      throw new Error('Funzione ' + fnName + ' non trovata');
     }
+  }catch(e){ err('safeCall',fnName,e); }
+}
+
+/* -------------------------
+   Event handlers
+   ------------------------- */
+document.getElementById('uploadBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+
+document.getElementById('fileInput').addEventListener('change', async (ev)=>{
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  log('Caricato file:', f.name, '('+f.size+' byte)');
+  const ab = await f.arrayBuffer();
+  if(!Module || !Module.FS){
+    err('Module.FS non disponibile ancora. Premi "Init / Sync IDBFS" e riprova');
+    return;
   }
-
-  function renderGames(filterText = "", platform = "all") {
-    loadingEl.style.display = "none";
-    listContainer.innerHTML = "";
-    const filtered = games.filter(g => {
-      const matchesTitle = g.title.toLowerCase().includes(filterText.toLowerCase());
-      const matchesPlatform = platform === "all" || g.platform === platform;
-      return matchesTitle && matchesPlatform;
+  const path = '/offline/' + f.name;
+  try{
+    // scrive su FS
+    try{ Module.FS.unlink(path); } catch(e){}
+    Module.FS.writeFile(path, new Uint8Array(ab));
+    log('Scritta su FS:', path);
+    // sincronizza su IDBFS
+    Module.FS.syncfs(false, (errSync) => {
+      if(errSync) { err('syncfs error',errSync); log('syncfs: errore'); }
+      else { log('syncfs: OK — ROM salvata in IndexedDB'); refreshRomList(); }
     });
+  }catch(e){ err('Errore scrittura FS', e); }
+  ev.target.value = '';
+});
 
-    if (filtered.length === 0) {
-      listContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align:center; color:#777;">Nessun gioco trovato.</p>`;
-      return;
+/* Init / sync IDBFS (usa la funzione em_init_fs() definita nel JS) */
+document.getElementById('initFsBtn').addEventListener('click',()=>{
+  log('Chiamata em_init_fs()...');
+  try{
+    if(typeof em_init_fs === 'function'){ em_init_fs(); log('em_init_fs() chiamata'); }
+    else if(typeof window.em_init_fs === 'function'){ window.em_init_fs(); log('em_init_fs() chiamata (window)'); }
+    else log('em_init_fs() non trovata nel bundle JS — assicurati che SkyEmu.js sia incluso e pronto.');
+  }catch(e){ err('em_init_fs() failed', e); }
+});
+
+/* show saved ROMs */
+async function refreshRomList(){
+  const romListEl = document.getElementById('romList');
+  romListEl.innerHTML = '<div class="small">Caricamento...</div>';
+  try{
+    if(!Module || !Module.FS){ romListEl.innerHTML = '<div class="small">Modulo non pronto.</div>'; return; }
+    // Analizza /offline (se esiste)
+    let items = [];
+    try{ items = Module.FS.readdir('/offline').filter(n=>n!=='.' && n!=='..'); }catch(e){ items = []; }
+    document.getElementById('romCount').textContent = items.length;
+    if(items.length === 0){ romListEl.innerHTML = '<div class="small">Nessuna ROM salvata (usa "Carica ROM")</div>'; return; }
+    romListEl.innerHTML = '';
+    for(const name of items){
+      const row = document.createElement('div'); row.className = 'rom-item';
+      const left = document.createElement('div'); left.innerHTML = `<div>${name}</div><div class="small">/offline/${name}</div>`;
+      const right = document.createElement('div');
+      const playBtn = document.createElement('button'); playBtn.textContent = '▶ Avvia';
+      playBtn.addEventListener('click', ()=>{ window.location = 'play.html?rom=' + encodeURIComponent('/offline/' + name); });
+      const dlBtn = document.createElement('button'); dlBtn.textContent = '⬇ Download'; dlBtn.className = 'ghost';
+      dlBtn.addEventListener('click', ()=> downloadFromFS('/offline/'+name));
+      const delBtn = document.createElement('button'); delBtn.textContent = '🗑 Elimina'; delBtn.className = 'ghost';
+      delBtn.addEventListener('click', ()=> {
+        if(confirm('Eliminare ' + name + ' da /offline?')) {
+          try{ Module.FS.unlink('/offline/' + name); Module.FS.syncfs(false, ()=>{ log('Eliminato e sync'); refreshRomList(); }); } catch(e){ err(e); alert('Errore eliminazione'); }
+        }
+      });
+      right.appendChild(playBtn); right.appendChild(dlBtn); right.appendChild(delBtn);
+      row.appendChild(left); row.appendChild(right);
+      romListEl.appendChild(row);
     }
+  }catch(e){ err('refreshRomList error', e); romListEl.innerHTML = '<div class="small">Errore</div>'; }
+}
 
-    filtered.forEach(g => {
-      const card = document.createElement("div");
-      card.className = "game-card";
-      card.innerHTML = `
-        <img src="${g.cover}" alt="${g.title}">
-        <h3>${g.title}</h3>
-        <p>${g.platform}</p>
-        <button onclick="playGame('${encodeURIComponent(g.rom)}', '${encodeURIComponent(g.title)}')">Gioca</button>
-      `;
-      listContainer.appendChild(card);
-    });
+/* download file from FS */
+function downloadFromFS(path){
+  if(!Module || !Module.FS){ err('FS non disponibile'); return; }
+  try{
+    const data = Module.FS.readFile(path, { encoding: 'binary' });
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = path.split('/').pop();
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }catch(e){ err('downloadFromFS', e); }
+}
+
+/* list button */
+document.getElementById('listBtn').addEventListener('click', refreshRomList);
+
+/* open /offline using FS browsing: we provide a helpful link that opens play.html without rom param */
+document.getElementById('openFolderBtn').addEventListener('click', ()=>{
+  alert('Apri la console del browser o usa "Mostra ROM salvate" per vedere il contenuto di /offline. Per avviare una ROM, clicca "Avvia".');
+  refreshRomList();
+});
+
+/* RA / Drive buttons (usano funzioni già presenti nel bundle JS se esistono) */
+document.getElementById('raRegisterBtn').addEventListener('click', ()=>{
+  try {
+    // Assumes ASM_CONSTS created an element via se_open_url or similar; but we call exported helper if present
+    if(typeof _https_open_url === 'function') _https_open_url(allocate(intArrayFromString('https://retroachievements.org/createaccount.php'),'i8',ALLOC_NORMAL));
+  } catch(e){ console.warn('raRegister fallback', e); }
+  // also fallback to the JS helper included in your blob (ASM_CONSTS used it internally)
+  if(typeof window['em_oath_sign_in'] === 'function') window.em_oath_sign_in(0, 0);
+});
+
+document.getElementById('driveLoginBtn').addEventListener('click', ()=>{
+  // the runtime exposes se_login_cloud as Module._se_login_cloud
+  try{
+    if(typeof Module !== 'undefined' && typeof Module._se_login_cloud === 'function') {
+      Module._se_login_cloud();
+      log('se_login_cloud() invoked');
+    } else {
+      log('Funzione se_login_cloud non presente (o modulo non pronto).');
+    }
+  }catch(e){ err('driveLoginBtn err', e); }
+});
+
+/* -------------------------
+   Quando il modulo Emscripten è pronto
+   ------------------------- */
+function onModuleReady(){
+  ModuleReady = true;
+  log('[Module] Runtime pronto.');
+  // proviamo a sincronizzare lista rom se FS è pronto
+  try{
+    if(Module.FS) { hasFS = true; log('FS disponibile. Lettura /offline...'); refreshRomList(); }
+  }catch(e){ err('FS check error', e); }
+}
+
+/* Hook: se lo script Emscripten imposta Module.onRuntimeInitialized, manteniamo il nostro */
+if(typeof Module !== 'undefined'){
+  if(typeof Module.onRuntimeInitialized === 'function'){
+    const prev = Module.onRuntimeInitialized;
+    Module.onRuntimeInitialized = function(){ prev(); onModuleReady(); };
+  } else {
+    Module.onRuntimeInitialized = onModuleReady;
   }
+} else {
+  // Module sarà definito quando verrà incluso SkyEmu.js; l'utente deve includerlo nella stessa cartella.
+  window.Module = window.Module || {};
+  window.Module.onRuntimeInitialized = onModuleReady;
+}
 
-  function playGame(rom, title) {
-    window.location.href = `play.html?rom=${rom}&title=${title}`;
-  }
-
-  searchInput.addEventListener("input", () => {
-    renderGames(searchInput.value, platformFilter.value);
-  });
-
-  platformFilter.addEventListener("change", () => {
-    renderGames(searchInput.value, platformFilter.value);
-  });
-
-  loadGames();
-  </script>
+log('UI pronta. Assicurati di avere lo script SkyEmu.js nella stessa cartella.');
+</script>
 </body>
 </html>
