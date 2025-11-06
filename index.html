@@ -1,190 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Libreria Giochi – RetroLibreria</title>
+  <meta charset="utf-8">
+  <title>Libreria GBA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * { box-sizing: border-box; }
     body {
-      background: radial-gradient(circle at center, #0a0a0a, #000);
-      color: white;
-      font-family: "Segoe UI", Roboto, sans-serif;
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      text-align: center;
       margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    header {
-      width: 100%;
       padding: 20px;
-      background: #101010;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #00ff99;
-      box-shadow: 0 0 10px rgba(0,255,153,0.3);
     }
-    #search-bar {
-      width: 80%;
-      max-width: 600px;
-      margin: 20px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    h1 {
+      color: #0af;
     }
-    #search-input {
-      width: 100%;
-      padding: 10px 15px;
-      border-radius: 12px;
-      border: none;
-      font-size: 1rem;
-      outline: none;
-    }
-    #filters {
-      margin-bottom: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    button.filter {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 12px;
+    .game {
+      background: #222;
+      border-radius: 10px;
+      margin: 10px auto;
+      padding: 15px;
+      width: 90%;
+      max-width: 400px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: transform 0.2s;
     }
-    button.filter.active {
-      background: #00ff99;
-      color: black;
-      font-weight: bold;
-    }
-    #games-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      padding: 20px;
-      width: 100%;
-      max-width: 1200px;
-    }
-    .game-card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: transform 0.3s, box-shadow 0.3s;
-      cursor: pointer;
-    }
-    .game-card:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px rgba(0,255,153,0.5);
-    }
-    .game-card img {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-      display: block;
-    }
-    .game-card .info {
-      padding: 10px;
-      text-align: center;
-    }
-    .game-card .info h3 {
-      margin: 5px 0;
-      font-size: 1rem;
-      color: #fff;
-    }
-    .game-card .info span {
-      font-size: 0.9rem;
-      color: #00ff99;
+    .game:hover {
+      background: #333;
+      transform: scale(1.03);
     }
   </style>
 </head>
 <body>
-  <header>🎮 RetroLibreria</header>
+  <h1>🎮 Libreria GBA (Europe)</h1>
+  <div id="list">Caricamento...</div>
 
-  <div id="search-bar">
-    <input type="text" id="search-input" placeholder="Cerca un gioco..." />
-  </div>
+<script>
+async function loadGames() {
+  const listEl = document.getElementById('list');
+  try {
+    const response = await fetch('https://api.github.com/repos/AlexBlackmore/roms/contents/gba');
+    const files = await response.json();
 
-  <div id="filters">
-    <button class="filter active" data-platform="all">Tutti</button>
-    <button class="filter" data-platform="GBA">Game Boy Advance</button>
-    <button class="filter" data-platform="NDS">Nintendo DS</button>
-  </div>
+    const games = files
+      .filter(f => f.name.endsWith('.zip') || f.name.endsWith('.gba'))
+      .filter(f => /(Europe|EUR)/i.test(f.name))
+      .map(f => ({
+        title: f.name.replace(/\.(zip|gba)$/i, ''),
+        url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gba/${f.name}`
+      }));
 
-  <div id="games-container"></div>
-
-  <script>
-  // ==========================
-  //  CONFIGURAZIONE
-  // ==========================
-  const container = document.getElementById("games-container");
-  const searchInput = document.getElementById("search-input");
-  const filters = document.querySelectorAll(".filter");
-  let games = [];
-  let activePlatform = "all";
-
-  // ==========================
-  //  CARICAMENTO GIOCHI
-  // ==========================
-  async function loadGames() {
-    try {
-      const res = await fetch("games.json");
-      games = await res.json();
-      renderGames(games);
-    } catch (err) {
-      container.innerHTML = `<p style="color:red;">Errore nel caricamento di games.json</p>`;
-      console.error(err);
+    if (!games.length) {
+      listEl.textContent = "Nessun gioco europeo trovato 😕";
+      return;
     }
+
+    listEl.innerHTML = "";
+    for (const g of games) {
+      const div = document.createElement("div");
+      div.className = "game";
+      div.textContent = g.title;
+      div.onclick = () => {
+        window.location.href = `play.html?rom=${encodeURIComponent(g.url)}&title=${encodeURIComponent(g.title)}`;
+      };
+      listEl.appendChild(div);
+    }
+  } catch (err) {
+    console.error(err);
+    listEl.textContent = "Errore durante il caricamento.";
   }
+}
 
-  // ==========================
-  //  FILTRAGGIO + RICERCA
-  // ==========================
-  function renderGames(list) {
-    container.innerHTML = "";
-    list.forEach(g => {
-      if (activePlatform !== "all" && g.platform !== activePlatform) return;
-      const card = document.createElement("div");
-      card.className = "game-card";
-      card.onclick = () => window.location.href = `play.html?id=${g.id}`;
-      card.innerHTML = `
-        <img src="${g.image || 'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg'}" alt="${g.name}">
-        <div class="info">
-          <h3>${g.name}</h3>
-          <span>${g.platform}</span>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }
-
-  function filterGames() {
-    const query = searchInput.value.toLowerCase();
-    const filtered = games.filter(g => 
-      g.name.toLowerCase().includes(query) ||
-      g.id.toLowerCase().includes(query)
-    );
-    renderGames(filtered);
-  }
-
-  searchInput.addEventListener("input", filterGames);
-
-  filters.forEach(btn => {
-    btn.addEventListener("click", () => {
-      filters.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      activePlatform = btn.dataset.platform;
-      filterGames();
-    });
-  });
-
-  loadGames();
-  </script>
+loadGames();
+</script>
 </body>
 </html>
