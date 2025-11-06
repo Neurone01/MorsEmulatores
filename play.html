@@ -1,75 +1,56 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SkyEmu - Gioca</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0b0b0b;
-      color: #eee;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background: #111;
-      padding: 10px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #222;
-    }
-    header h1 { font-size: 16px; margin: 0; color: #9cf; }
-    #controls button {
-      background: #1f6feb;
-      border: none;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-left: 6px;
-    }
-    #controls button.ghost {
-      background: transparent;
-      border: 1px solid #444;
-    }
-    #canvas {
-      flex: 1;
-      background: #000;
-      display: block;
-      width: 100%;
-      height: calc(100vh - 60px);
-      border: none;
-      outline: none;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Play</title>
+<style>
+  :root{--bg:#050507;--panel:#0f1113;--muted:#9aa0a6;--accent:#1f6feb}
+  html,body{height:100%;margin:0;font-family:system-ui,Roboto,Arial;background:var(--bg);color:#eee}
+  header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#070709;border-bottom:1px solid #111}
+  header h1{margin:0;font-size:16px;color:var(--accent)}
+  #controls{display:flex;gap:8px}
+  button{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid #222;color:#ddd}
+  #canvas{display:block;width:100%;height:calc(100vh - 60px);background:#000;outline:none;border:none}
+  #info{padding:10px;font-size:13px;color:var(--muted);background:transparent}
+</style>
 </head>
 <body>
   <header>
-    <h1>SkyEmu — <span id="romName">Gioco</span></h1>
+    <h1 id="title">Caricamento…</h1>
     <div id="controls">
-      <button id="downloadSaveBtn">💾 Save</button>
-      <button id="fullscreenBtn">⛶ Fullscreen</button>
+      <button id="saveBtn">💾 Scarica save</button>
       <button id="backBtn" class="ghost">← Torna</button>
     </div>
   </header>
 
-  <canvas id="canvas"></canvas>
+  <canvas id="canvas" tabindex="0"></canvas>
+  <div id="info"></div>
 
 <script>
-/* -----------------------------
-   Config base e log
------------------------------- */
-const log = (...args)=>console.log('[PLAY]',...args);
-const rom = new URLSearchParams(location.search).get('rom') || '';
-document.getElementById('romName').textContent = rom.split('/').pop() || 'Senza nome';
+/*
+  play.html
+  - legge ?rom=URL encodato
+  - impedisce fullscreen automatico dell'emulatore
+  - tenta rimuovere menu interni / overlay
+  - carica SkyEmu.js (remotamente o locale)
+*/
 
-/* -----------------------------
-   Blocca il fullscreen automatico
------------------------------- */
+// utility
+const qs = new URLSearchParams(location.search);
+const romParam = qs.get('rom') || '';
+const titleParam = qs.get('title') || romParam.split('/').pop() || 'Gioco';
+document.getElementById('title').textContent = titleParam;
+const info = document.getElementById('info');
+const canvas = document.getElementById('canvas');
+
+function log(...a){ console.log('[PLAY]',...a) }
+function setInfo(s){ info.textContent = s; }
+
+setInfo(romParam ? `ROM: ${romParam}` : 'Nessuna ROM selezionata');
+
+// PREVENZIONE fullscreen automatico (sovrascrive le API)
 (function preventFullscreen(){
   const noop = ()=>Promise.resolve();
   const proto = Element.prototype;
@@ -79,97 +60,115 @@ document.getElementById('romName').textContent = rom.split('/').pop() || 'Senza 
   proto.msRequestFullscreen = noop;
   document.documentElement.requestFullscreen = noop;
   document.exitFullscreen = ()=>Promise.resolve();
-  log('Blocco fullscreen automatico attivo');
+  log('API fullscreen sovrascritte');
 })();
 
-/* -----------------------------
-   Blocca il menu interno di SkyEmu
------------------------------- */
-window.addEventListener('keydown',e=>{
-  // Blocca combinazioni note: ESC, F1, F2, F10, Tab, Shift, Start+Select, ecc.
-  const blockedKeys = ['Escape','F1','F2','F10','F11','Tab','F12'];
-  if(blockedKeys.includes(e.key)) {
-    e.stopImmediatePropagation();
-    e.preventDefault();
-    log('Bloccato tasto menu interno:',e.key);
+// Blocca tasti che aprono menu degli emulatori
+window.addEventListener('keydown', e=>{
+  const block = ['Escape','F1','F2','F10','F11','F12','ContextMenu','Insert'];
+  // Inoltre blocca combinazioni comuni (start+select via keyboard non standard, ma proviamo a bloccare Ctrl+Shift, Alt+S ecc.)
+  if(block.includes(e.key) || (e.ctrlKey && e.shiftKey) || (e.altKey && e.key.toLowerCase()==='s')) {
+    e.preventDefault(); e.stopImmediatePropagation();
+    log('Bloccato tasto:', e.key);
   }
 });
-window.addEventListener('contextmenu',e=>e.preventDefault()); // blocca click destro
-window.addEventListener('mousedown',e=>{
-  if(e.button===2){ e.preventDefault(); e.stopImmediatePropagation(); }
-});
 
-/* -----------------------------
-   Rimuove ogni overlay o menu creato dall’emulatore
------------------------------- */
-const suspiciousWords = ['menu','overlay','settings','config','options','retroarch','pause','resume'];
+// Rimuovi menu/overlay creati dinamicamente
+const suspicious = ['menu','overlay','settings','options','retroarch','pause','resume','skyemu','sky-emulator','contextmenu'];
 const observer = new MutationObserver(muts=>{
   for(const m of muts){
     for(const n of m.addedNodes){
-      if(n.nodeType!==1) continue;
+      if(n.nodeType !== 1) continue;
       const id=(n.id||'').toLowerCase(), cls=(n.className||'').toLowerCase(), txt=(n.textContent||'').toLowerCase();
-      if([...suspiciousWords].some(w=>id.includes(w)||cls.includes(w)||txt.includes(w))){
-        log('Rimosso overlay/menu interno:', id||cls||txt.slice(0,30));
-        n.remove();
+      if(suspicious.some(w=>id.includes(w)||cls.includes(w)||txt.includes(w))){
+        try{ n.remove(); log('Rimosso overlay/menu:', id||cls||txt.slice(0,30)) }catch(e){}
       }
-      const childs=n.querySelectorAll?.('*')||[];
-      for(const c of childs){
+      // rimuovi discendenti sospetti
+      for(const c of n.querySelectorAll?.('*')||[]){
         const id2=(c.id||'').toLowerCase(), cls2=(c.className||'').toLowerCase(), txt2=(c.textContent||'').toLowerCase();
-        if([...suspiciousWords].some(w=>id2.includes(w)||cls2.includes(w)||txt2.includes(w))){
-          c.remove();
+        if(suspicious.some(w=>id2.includes(w)||cls2.includes(w)||txt2.includes(w))){
+          try{ c.remove(); }catch(e){}
         }
       }
     }
   }
 });
 observer.observe(document.body,{childList:true,subtree:true});
-log('Rimozione menu interna attiva');
+log('Observer overlay attivo');
 
-/* -----------------------------
-   Pulsanti principali
------------------------------- */
-document.getElementById('backBtn').onclick=()=>location.href='index.html';
-document.getElementById('fullscreenBtn').onclick=()=>{
-  const canvas=document.getElementById('canvas');
-  if(canvas.requestFullscreen) canvas.requestFullscreen();
-  else if(canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
-};
-document.getElementById('downloadSaveBtn').onclick=()=>{
-  if(!window.Module?.FS) return alert('Save non disponibile.');
+// Disabilita contextmenu
+window.addEventListener('contextmenu', e=>{ e.preventDefault(); e.stopImmediatePropagation(); });
+
+// Pulsanti
+document.getElementById('backBtn').addEventListener('click', ()=> location.href='index.html');
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  // Tentativo: scarica file save presumibilmente in /offline/<nome>.sav
   try{
-    const romName=rom.split('/').pop()||'save';
-    const savPath='/offline/'+romName+'.sav';
-    const data=Module.FS.readFile(savPath);
-    const blob=new Blob([data],{type:'application/octet-stream'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download=romName+'.sav';
-    a.click();
+    const romName = (qs.get('title') || romParam.split('/').pop() || 'save').replace(/\s+/g,'_');
+    const savPath = '/offline/' + romName + '.sav';
+    if(!window.Module?.FS) throw new Error('Emulatore non inizializzato');
+    const data = Module.FS.readFile(savPath);
+    const blob = new Blob([data], {type:'application/octet-stream'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = romName + '.sav'; a.click();
   }catch(e){
-    alert('Nessun salvataggio trovato.');
+    alert('Salvataggio non disponibile o non trovato.');
     console.warn(e);
   }
-};
+});
 
-/* -----------------------------
-   Configurazione SkyEmu
------------------------------- */
-window.Module = {
-  canvas: document.getElementById('canvas'),
-  print: x=>log(x),
-  printErr: x=>log('ERR:',x),
-  arguments: rom ? [rom] : [],
-  noInitialRun: false
-};
+// Carica SkyEmu (modifica l'URL se preferisci la versione locale)
+function loadEmuScript(src){
+  return new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = ()=> { log('SkyEmu.js caricato'); res(); };
+    s.onerror = (e)=> rej(e);
+    document.body.appendChild(s);
+  });
+}
 
-/* -----------------------------
-   Carica l’emulatore
------------------------------- */
-const script=document.createElement('script');
-script.src='https://web.skyemu.app/SkyEmu.js'; // oppure './SkyEmu.js' se locale
-script.onload=()=>log('SkyEmu caricato');
-script.onerror=()=>alert('Errore nel caricamento di SkyEmu.js');
-document.body.appendChild(script);
+// Config Module per l'emulatore (assume SkyEmu compatibile con Module pattern)
+window.Module = window.Module || {};
+Module.canvas = canvas;
+Module.print = (x)=>log(x);
+Module.printErr = (x)=>log('ERR:',x);
+Module.arguments = romParam ? [romParam] : [];
+Module.noInitialRun = false; // SkyEmu potrebbe lanciare subito
+
+// Se vuoi caricare una versione locale, sostituisci l'URL con './SkyEmu.js'
+const remoteScript = 'https://web.skyemu.app/SkyEmu.js';
+if(!romParam){
+  setInfo('Errore: nessuna ROM specificata in ?rom=');
+} else {
+  setInfo('Caricamento emulatore e ROM...');
+  loadEmuScript(remoteScript).then(()=> {
+    setInfo('Emulatore caricato — avvio in corso...');
+    // Se SkyEmu si aspetta Module.arguments, lo userà. Alcuni moduli iniziano automaticamente.
+    // In caso l'emulatore esponga una funzione per caricare la rom a runtime, prova a chiamarla:
+    try{
+      // Esempio generico, se esiste una API loadROM(URL)
+      if(typeof window.SkyEmu !== 'undefined' && typeof window.SkyEmu.loadROM === 'function'){
+        window.SkyEmu.loadROM(romParam);
+        log('SkyEmu.loadROM chiamato con', romParam);
+      } else {
+        log('Nessuna SkyEmu.loadROM API rilevata — l\'emulatore potrebbe usare Module.arguments');
+      }
+    }catch(e){
+      console.warn(e);
+    }
+  }).catch(err=>{
+    console.error('Errore caricamento SkyEmu.js', err);
+    setInfo('Errore nel caricamento di SkyEmu.js');
+    alert('Impossibile caricare SkyEmu.js. Controlla la connessione o usa la versione locale.');
+  });
+}
+
+// Blocca overlay se appare dopo l'inizializzazione (ulteriore tentativo)
+setTimeout(()=> {
+  document.querySelectorAll?.('[role="dialog"],.menu,.overlay,.ui-menu,.emu-menu').forEach(n=>n.remove());
+}, 1000);
+
 </script>
 </body>
 </html>
