@@ -4,14 +4,15 @@
     "name": "Pokémon Versione Smeraldo",
     "platform": "GBA",
     "image": "https://upload.wikimedia.org/wikipedia/en/6/6b/Pokemon_Emerald_cover.jpg",
-    "url": "https://github.com/vbaemulator/GBA-Roms/raw/main/Pokemon%20Ultra%20Smeraldo%20Completed_v0.91.zip"
+    "url": "https://files.catbox.moe/msei8x.gba"
   },
   {
     "id": "firered_random",
     "name": "Pokémon FireRed Random",
     "platform": "GBA",
     "image": "https://upload.wikimedia.org/wikipedia/en/3/3c/Pokemon_FireRed_boxart.png",
-    "url": "https://github.com/GodkuHacking/GBA-ROM-hacks/raw/mind/rom%20hacks/FIREREDRANDOM.gba"
+    "url": "https://github.com/vbaemulator/GBA-Roms/raw/main/Pokemon%20X%20Inazuma%20Eleven%20v1.5.zip"
   }
 ]
+
 
