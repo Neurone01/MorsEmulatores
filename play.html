@@ -18,10 +18,7 @@
 
     #container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       overflow: hidden;
     }
 
@@ -45,6 +42,7 @@
       font-size: 14px;
       z-index: 10;
       transition: background 0.3s ease;
+      backdrop-filter: blur(4px);
     }
 
     #back:hover {
@@ -85,11 +83,11 @@
 <body>
   <div id="fullscreenOverlay">
     <h2>🎮 Clicca per avviare il gioco</h2>
-    <button onclick="startGame()">Avvia e vai a Schermo Intero</button>
+    <button id="startButton">Avvia e vai a Schermo Intero</button>
   </div>
 
   <div id="container" hidden>
-    <canvas id="canvas" class="emscripten" tabindex="-1"></canvas>
+    <canvas id="canvas" class="emscripten" tabindex="0"></canvas>
     <div id="back" onclick="exitToLibrary()">← Torna alla Libreria</div>
   </div>
 
@@ -97,34 +95,32 @@
     const urlParams = new URLSearchParams(window.location.search);
     const romUrl = urlParams.get("rom");
     const title = urlParams.get("title") || "Gioco";
-
     document.title = `SkyEmu - ${title}`;
 
     function exitToLibrary() {
       window.location.href = "index.html";
     }
 
-    function startGame() {
-      document.getElementById("fullscreenOverlay").style.display = "none";
-      document.getElementById("container").hidden = false;
-
+    async function startGame() {
+      const overlay = document.getElementById("fullscreenOverlay");
+      const container = document.getElementById("container");
       const canvas = document.getElementById("canvas");
 
-      // Richiede il fullscreen (ora permesso perché avviato da click)
-      if (canvas.requestFullscreen) {
-        canvas.requestFullscreen().catch(err => console.warn(err));
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen();
+      overlay.style.display = "none";
+      container.hidden = false;
+
+      try {
+        if (canvas.requestFullscreen) await canvas.requestFullscreen();
+        else if (canvas.webkitRequestFullscreen) await canvas.webkitRequestFullscreen();
+      } catch (err) {
+        console.warn("⚠️ Fullscreen non consentito:", err);
       }
 
-      // Carica l’emulatore
-      const script = document.createElement("script");
-      script.src = "https://web.skyemu.app/SkyEmu.js";
-      document.body.appendChild(script);
+      canvas.focus();
 
-      // Imposta la ROM automatica
+      // Imposta il modulo prima di caricare SkyEmu
       window.Module = {
-        canvas: canvas,
+        canvas,
         preRun: [() => {
           fetch(romUrl)
             .then(r => r.arrayBuffer())
@@ -133,10 +129,28 @@
               FS.writeFile("/offline/rom.gba", data);
               Module.ccall("LoadROM", "number", ["string"], ["/offline/rom.gba"]);
             })
-            .catch(e => console.error("Errore nel caricamento ROM:", e));
+            .catch(e => console.error("Errore ROM:", e));
         }]
       };
+
+      // Carica l’emulatore
+      const script = document.createElement("script");
+      script.src = "https://web.skyemu.app/SkyEmu.js";
+      document.body.appendChild(script);
     }
+
+    // Collegamento del bottone all’avvio
+    document.getElementById("startButton").addEventListener("click", startGame);
+
+    // Mantiene focus su canvas per la tastiera
+    document.addEventListener("click", () => {
+      const c = document.querySelector("canvas");
+      if (c) c.focus();
+    });
+    document.addEventListener("keydown", () => {
+      const c = document.querySelector("canvas");
+      if (c) c.focus();
+    });
   </script>
 </body>
 </html>
