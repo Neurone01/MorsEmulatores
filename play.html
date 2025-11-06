@@ -1,156 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SkyEmu - Gioco</title>
-  <meta name="description" content="SkyEmu online game emulator" />
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: black;
-      overflow: hidden;
-      height: 100%;
-      width: 100%;
-    }
-
-    #container {
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-    }
-
-    #canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: black;
-    }
-
-    #back {
-      position: fixed;
-      bottom: 15px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #00b7ff;
-      padding: 8px 16px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      z-index: 10;
-      transition: background 0.3s ease;
-      backdrop-filter: blur(4px);
-    }
-
-    #back:hover {
-      background: rgba(0, 0, 0, 0.85);
-    }
-
-    #fullscreenOverlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      font-family: sans-serif;
-      z-index: 100;
-      flex-direction: column;
-      text-align: center;
-    }
-
-    #fullscreenOverlay button {
-      margin-top: 1em;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background: #00b7ff;
-      color: black;
-      font-size: 16px;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    #fullscreenOverlay button:hover {
-      transform: scale(1.05);
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SkyEmu — Play</title>
+<style>
+  :root{--bg:#05060a;--panel:#0f1115;--accent:#3aa0ff;color:#e6eef6}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#020204,#05060a);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--accent)}
+  #container{display:flex;height:100%;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.03)}
+  header .title{font-weight:600}
+  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:12px}
+  canvas{background:black;border-radius:8px;max-width:100%;height:auto;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  .controls{display:flex;gap:8px;align-items:center}
+  button{background:var(--accent);border:none;color:#082233;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--accent)}
+  #messages{padding:10px;font-family:monospace;background:rgba(0,0,0,.35);height:80px;overflow:auto;color:#cfefff}
+  .small{font-size:13px;color:rgba(255,255,255,.6)}
+</style>
 </head>
 <body>
-  <div id="fullscreenOverlay">
-    <h2>🎮 Clicca per avviare il gioco</h2>
-    <button id="startButton">Avvia e vai a Schermo Intero</button>
+<div id="container">
+  <header>
+    <div>
+      <div class="title">SkyEmu — Play</div>
+      <div class="small" id="romName">ROM: (nessuna)</div>
+    </div>
+    <div class="controls">
+      <button id="fullscreenBtn">⛶ Fullscreen</button>
+      <button id="downloadSaveBtn" class="ghost">⬇ Scarica Save</button>
+      <button id="backBtn" class="ghost">← Torna</button>
+    </div>
+  </header>
+
+  <div class="canvas-wrap">
+    <!-- il canvas DEVE avere id "canvas" perché lo JS Emscripten lo cerca -->
+    <canvas id="canvas" width="640" height="480"></canvas>
   </div>
 
-  <div id="container" hidden>
-    <canvas id="canvas" class="emscripten" tabindex="0"></canvas>
-    <div id="back" onclick="exitToLibrary()">← Torna alla Libreria</div>
-  </div>
+  <div id="messages" class="small">In attesa del modulo...</div>
+</div>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const romUrl = urlParams.get("rom");
-    const title = urlParams.get("title") || "Gioco";
-    document.title = `SkyEmu - ${title}`;
+<script>
+/*
+  play.html:
+  - legge ?rom=... dalla querystring (es: play.html?rom=/offline/mionome.sfc)
+  - imposta Module.arguments PRIMA di caricare SkyEmu.js (se possibile)
+  - fornisce pulsanti di controllo (fullscreen, download save, back)
+*/
 
-    function exitToLibrary() {
-      window.location.href = "index.html";
-    }
+function qsParam(name){
+  const params = new URLSearchParams(location.search);
+  return params.get(name);
+}
+const rom = qsParam('rom');
+const messages = document.getElementById('messages');
+const romNameEl = document.getElementById('romName');
 
-    async function startGame() {
-      const overlay = document.getElementById("fullscreenOverlay");
-      const container = document.getElementById("container");
-      const canvas = document.getElementById("canvas");
+function msg(...args){ messages.textContent += '\\n' + args.join(' '); messages.scrollTop = messages.scrollHeight; }
 
-      overlay.style.display = "none";
-      container.hidden = false;
+if(rom){
+  romNameEl.textContent = 'ROM: ' + rom;
+  msg('ROM richiesta:', rom);
+} else {
+  msg('Nessuna ROM passata. Esempio: play.html?rom=/offline/miorom.sfc');
+}
 
-      try {
-        if (canvas.requestFullscreen) await canvas.requestFullscreen();
-        else if (canvas.webkitRequestFullscreen) await canvas.webkitRequestFullscreen();
-      } catch (err) {
-        console.warn("⚠️ Fullscreen non consentito:", err);
-      }
+/* Prepara il Module PRIMA di includere lo script di Emscripten.
+   Se l'emulatore legge l'argv per il path ROM, allora passiamo il path qui.
+*/
+window.Module = window.Module || {};
+// setta i parametri che il runtime vede come argv
+if(rom){
+  // alcuni progetti aspettano semplicemente l'arg, altri "--rom", adattare se serve
+  Module['arguments'] = [ rom ];
+  msg('Module.arguments impostati.');
+}
 
-      canvas.focus();
+// posponi il log standard per miglior compatibilità
+Module['print'] = function(x){ msg(x); };
+Module['printErr'] = function(x){ msg('ERR: '+x); };
 
-      // Imposta il modulo prima di caricare SkyEmu
-      window.Module = {
-        canvas,
-        preRun: [() => {
-          fetch(romUrl)
-            .then(r => r.arrayBuffer())
-            .then(buf => {
-              const data = new Uint8Array(buf);
-              FS.writeFile("/offline/rom.gba", data);
-              Module.ccall("LoadROM", "number", ["string"], ["/offline/rom.gba"]);
-            })
-            .catch(e => console.error("Errore ROM:", e));
-        }]
-      };
+// se vuoi che l'emu non parta automaticamente (ma qui preferiamo run normale), puoi impostare noInitialRun.
+// Module['noInitialRun'] = true;
 
-      // Carica l’emulatore
-      const script = document.createElement("script");
-      script.src = "https://web.skyemu.app/SkyEmu.js";
-      document.body.appendChild(script);
-    }
+/* Helper per fullscreen */
+document.getElementById('fullscreenBtn').addEventListener('click', ()=>{
+  const canvas = document.getElementById('canvas');
+  if(canvas.requestFullscreen) canvas.requestFullscreen();
+  else if(canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen();
+  else alert('Fullscreen non supportato in questo browser.');
+});
 
-    // Collegamento del bottone all’avvio
-    document.getElementById("startButton").addEventListener("click", startGame);
+/* Download del save: tentiamo di scaricare un file in /offline con lo stesso nome ROM + .sav */
+document.getElementById('downloadSaveBtn').addEventListener('click', ()=>{
+  if(!rom){ alert('Nessuna ROM specificata.'); return; }
+  const savName = rom.split('/').pop() + '.sav';
+  try{
+    if(!Module || !Module.FS){ msg('FS non pronto.'); return; }
+    const path = '/offline/' + savName;
+    const data = Module.FS.readFile(path, { encoding: 'binary' });
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = savName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    msg('Scaricato save: ' + savName);
+  }catch(e){
+    msg('Errore download save: ' + e);
+  }
+});
 
-    // Mantiene focus su canvas per la tastiera
-    document.addEventListener("click", () => {
-      const c = document.querySelector("canvas");
-      if (c) c.focus();
-    });
-    document.addEventListener("keydown", () => {
-      const c = document.querySelector("canvas");
-      if (c) c.focus();
-    });
-  </script>
+/* Torna indietro al launcher */
+document.getElementById('backBtn').addEventListener('click', ()=> location.href = 'index.html');
+
+/* Ora includi il bundle JS Emscripten (SkyEmu.js) — assicurati che sia nella stessa cartella */
+(function loadEmu(){
+  const script = document.createElement('script');
+  script.src = 'SkyEmu.js';
+  script.onload = () => { msg('SkyEmu.js caricato.'); };
+  script.onerror = (e) => { msg('Impossibile caricare SkyEmu.js. Controlla che il file sia presente.'); };
+  document.body.appendChild(script);
+})();
+</script>
 </body>
 </html>
