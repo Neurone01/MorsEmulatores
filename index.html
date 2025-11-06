@@ -1,72 +1,190 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Seleziona gioco</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Libreria Giochi – RetroLibreria</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;padding:20px;background:#111;color:#eee}
-    h1{margin:0 0 10px 0}
-    .games{display:grid;grid-template-columns: repeat(auto-fit,minmax(220px,1fr));gap:12px}
-    .card{background:#1b1b1b;border:1px solid #2b2b2b;padding:12px;border-radius:8px}
-    .thumb{height:120px;background:#222;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#888;margin-bottom:8px;overflow:hidden}
-    .title{font-weight:600}
-    .meta{font-size:0.95rem;color:#aaa}
-    .btn{display:inline-block;margin-top:8px;padding:8px 10px;border-radius:6px;border:0;background:#0b84ff;color:white;text-decoration:none}
-    .url-form{margin-top:18px;padding:10px;background:#0b0b0b;border-radius:8px;border:1px solid #222}
-    label{display:block;margin-bottom:8px;color:#ddd}
-    input[type="text"]{width:100%;padding:8px;border-radius:6px;border:1px solid #333;background:#111;color:#eee}
+    * { box-sizing: border-box; }
+    body {
+      background: radial-gradient(circle at center, #0a0a0a, #000);
+      color: white;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      width: 100%;
+      padding: 20px;
+      background: #101010;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00ff99;
+      box-shadow: 0 0 10px rgba(0,255,153,0.3);
+    }
+    #search-bar {
+      width: 80%;
+      max-width: 600px;
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #search-input {
+      width: 100%;
+      padding: 10px 15px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      outline: none;
+    }
+    #filters {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button.filter {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button.filter.active {
+      background: #00ff99;
+      color: black;
+      font-weight: bold;
+    }
+    #games-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .game-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .game-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(0,255,153,0.5);
+    }
+    .game-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+    .game-card .info {
+      padding: 10px;
+      text-align: center;
+    }
+    .game-card .info h3 {
+      margin: 5px 0;
+      font-size: 1rem;
+      color: #fff;
+    }
+    .game-card .info span {
+      font-size: 0.9rem;
+      color: #00ff99;
+    }
   </style>
 </head>
 <body>
-  <h1>Scegli un gioco</h1>
-  <div id="list" class="games">Caricamento giochi…</div>
+  <header>🎮 RetroLibreria</header>
 
-  <div class="url-form">
-    <label>Carica URL ROM direttamente (CORS richiesto):</label>
-    <input id="directUrl" type="text" placeholder="https://archive.org/…/nome.gba" />
-    <a id="playDirect" class="btn" href="#">Gioca URL diretto</a>
+  <div id="search-bar">
+    <input type="text" id="search-input" placeholder="Cerca un gioco..." />
   </div>
 
+  <div id="filters">
+    <button class="filter active" data-platform="all">Tutti</button>
+    <button class="filter" data-platform="GBA">Game Boy Advance</button>
+    <button class="filter" data-platform="NDS">Nintendo DS</button>
+  </div>
+
+  <div id="games-container"></div>
+
   <script>
-    async function loadList(){
-      try{
-        const r = await fetch('games.json', {cache: 'no-store'});
-        if(!r.ok) throw new Error('games.json non trovato');
-        const games = await r.json();
-        render(games);
-      }catch(err){
-        document.getElementById('list').innerText = 'Errore caricamento games.json: ' + err;
-      }
+  // ==========================
+  //  CONFIGURAZIONE
+  // ==========================
+  const container = document.getElementById("games-container");
+  const searchInput = document.getElementById("search-input");
+  const filters = document.querySelectorAll(".filter");
+  let games = [];
+  let activePlatform = "all";
+
+  // ==========================
+  //  CARICAMENTO GIOCHI
+  // ==========================
+  async function loadGames() {
+    try {
+      const res = await fetch("games.json");
+      games = await res.json();
+      renderGames(games);
+    } catch (err) {
+      container.innerHTML = `<p style="color:red;">Errore nel caricamento di games.json</p>`;
+      console.error(err);
     }
+  }
 
-    function render(games){
-      const list = document.getElementById('list');
-      list.innerHTML = '';
-      for(const g of games){
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="thumb">${g.thumbnail?`<img src="${g.thumbnail}" style="max-width:100%;height:100%;object-fit:cover">`:`<span style="font-size:0.9rem">${g.system.toUpperCase()}</span>`}</div>
-          <div class="title">${escapeHtml(g.title)}</div>
-          <div class="meta">${escapeHtml(g.system)} — ${g.id}</div>
-          <a class="btn" href="play.html?id=${encodeURIComponent(g.id)}">Gioca</a>
-        `;
-        list.appendChild(card);
-      }
-    }
-
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-    document.getElementById('playDirect').addEventListener('click', (e)=>{
-      e.preventDefault();
-      const url = document.getElementById('directUrl').value.trim();
-      if(!url){alert('Inserisci un URL valido');return}
-      // reindirizza a play con param 'url'
-      window.location.href = 'play.html?url=' + encodeURIComponent(url);
+  // ==========================
+  //  FILTRAGGIO + RICERCA
+  // ==========================
+  function renderGames(list) {
+    container.innerHTML = "";
+    list.forEach(g => {
+      if (activePlatform !== "all" && g.platform !== activePlatform) return;
+      const card = document.createElement("div");
+      card.className = "game-card";
+      card.onclick = () => window.location.href = `play.html?id=${g.id}`;
+      card.innerHTML = `
+        <img src="${g.image || 'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg'}" alt="${g.name}">
+        <div class="info">
+          <h3>${g.name}</h3>
+          <span>${g.platform}</span>
+        </div>
+      `;
+      container.appendChild(card);
     });
+  }
 
-    loadList();
+  function filterGames() {
+    const query = searchInput.value.toLowerCase();
+    const filtered = games.filter(g => 
+      g.name.toLowerCase().includes(query) ||
+      g.id.toLowerCase().includes(query)
+    );
+    renderGames(filtered);
+  }
+
+  searchInput.addEventListener("input", filterGames);
+
+  filters.forEach(btn => {
+    btn.addEventListener("click", () => {
+      filters.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activePlatform = btn.dataset.platform;
+      filterGames();
+    });
+  });
+
+  loadGames();
   </script>
 </body>
 </html>
