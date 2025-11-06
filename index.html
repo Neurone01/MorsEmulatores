@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SkyEmu Web Arcade</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(90deg, #003a77, #00aaff);
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .controls input, .controls select {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    .controls input {
+      width: 200px;
+      max-width: 300px;
+    }
+
+    .controls select {
+      background: #111;
+      color: #00aaff;
+      cursor: pointer;
+      border: 1px solid #00aaff;
+      transition: 0.2s;
+    }
+
+    .controls select:hover {
+      background: #00aaff;
+      color: #fff;
+    }
+
+    .game-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .game-card {
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: center;
+    }
+
+    .game-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #00aaff;
+    }
+
+    .game-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    .game-card h3 {
+      margin: 10px 0 5px;
+      font-size: 1.1rem;
+    }
+
+    .game-card p {
+      margin: 0;
+      color: #aaa;
+    }
+
+    .game-card button {
+      margin: 10px 0 15px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      background: #00aaff;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .game-card button:hover {
+      background: #007acc;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 10px;
+      text-align: center;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    .loading {
+      text-align: center;
+      color: #888;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>🎮 SkyEmu Web Arcade</header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Cerca un gioco...">
+    <select id="filterPlatform">
+      <option value="all">Tutte le piattaforme</option>
+      <option value="GBA">Game Boy Advance</option>
+      <option value="GBC">Game Boy Color</option>
+      <option value="GB">Game Boy</option>
+      <option value="NDS">Nintendo DS</option>
+    </select>
+  </div>
+
+  <div id="gameList" class="game-list"></div>
+  <div id="loading" class="loading">Caricamento giochi...</div>
+
+  <footer>© 2025 SkyEmu Web Arcade</footer>
+
+  <script>
+  let games = [];
+
+  const listContainer = document.getElementById("gameList");
+  const searchInput = document.getElementById("search");
+  const platformFilter = document.getElementById("filterPlatform");
+  const loadingEl = document.getElementById("loading");
+
+  async function loadGames() {
+    try {
+      const res = await fetch("games.json");
+      if (!res.ok) throw new Error("Impossibile caricare games.json");
+      games = await res.json();
+      renderGames();
+    } catch (err) {
+      loadingEl.textContent = "Errore nel caricamento dei giochi 😢";
+      console.error(err);
+    }
+  }
+
+  function renderGames(filterText = "", platform = "all") {
+    loadingEl.style.display = "none";
+    listContainer.innerHTML = "";
+    const filtered = games.filter(g => {
+      const matchesTitle = g.title.toLowerCase().includes(filterText.toLowerCase());
+      const matchesPlatform = platform === "all" || g.platform === platform;
+      return matchesTitle && matchesPlatform;
+    });
+
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align:center; color:#777;">Nessun gioco trovato.</p>`;
+      return;
+    }
+
+    filtered.forEach(g => {
+      const card = document.createElement("div");
+      card.className = "game-card";
+      card.innerHTML = `
+        <img src="${g.cover}" alt="${g.title}">
+        <h3>${g.title}</h3>
+        <p>${g.platform}</p>
+        <button onclick="playGame('${encodeURIComponent(g.rom)}', '${encodeURIComponent(g.title)}')">Gioca</button>
+      `;
+      listContainer.appendChild(card);
+    });
+  }
+
+  function playGame(rom, title) {
+    window.location.href = `play.html?rom=${rom}&title=${title}`;
+  }
+
+  searchInput.addEventListener("input", () => {
+    renderGames(searchInput.value, platformFilter.value);
+  });
+
+  platformFilter.addEventListener("change", () => {
+    renderGames(searchInput.value, platformFilter.value);
+  });
+
+  loadGames();
+  </script>
+</body>
+</html>

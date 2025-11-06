@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Pokémon Smeraldo",
+    "platform": "GBA",
+    "cover": "https://upload.wikimedia.org/wikipedia/en/6/6e/Pokemon_Emerald_box_art.png",
+    "rom": "https://files.catbox.moe/msei8x.gba"
+  },
+  {
+    "title": "The Legend of Zelda - Minish Cap",
+    "platform": "GBA",
+    "cover": "https://upload.wikimedia.org/wikipedia/en/a/a2/The_Legend_of_Zelda_The_Minish_Cap_Game_Box.jpg",
+    "rom": "https://example.com/zelda-minish.gba"
+  },
+  {
+    "title": "Super Mario Advance",
+    "platform": "GBA",
+    "cover": "https://upload.wikimedia.org/wikipedia/en/b/b8/Super_Mario_Advance_box.jpg",
+    "rom": "https://example.com/mario-advance.gba"
+  },
+  {
+    "title": "Pokémon Platino",
+    "platform": "NDS",
+    "cover": "https://upload.wikimedia.org/wikipedia/en/3/36/Pokemon_Platinum.png",
+    "rom": "https://example.com/pokemon-platino.nds"
+  },
+  {
+    "title": "Tetris DX",
+    "platform": "GBC",
+    "cover": "https://upload.wikimedia.org/wikipedia/en/7/7e/Tetris_DX_cover.png",
+    "rom": "https://example.com/tetris-dx.gbc"
+  }
+]
