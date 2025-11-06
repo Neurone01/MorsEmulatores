@@ -1,310 +1,173 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Play</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avvio Gioco – RetroLibreria</title>
   <style>
-    :root{--bg:#0c0c0c;--panel:#141414;--accent:#0b84ff;--text:#eee}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    .topbar{display:flex;align-items:center;gap:12px;padding:12px;background:var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.6)}
-    .title{font-weight:700}
-    .content{display:flex;height:calc(100% - 56px)}
-    #canvasWrap{flex:1;display:flex;align-items:center;justify-content:center;background:#000}
-    #canvas{width:720px;height:480px;background:#000;border:1px solid #222}
-    .side{width:360px;background:#0f0f0f;padding:12px;box-sizing:border-box;overflow:auto}
-    .progress{height:12px;background:#222;border-radius:6px;overflow:hidden;margin-top:8px}
-    .bar{height:100%;width:0;background:var(--accent)}
-    .muted{color:#9aa}
-    .hidden{display:none}
-    /* forcella: nascondi menu/emulator UI comuni */
-    .emu-menu,.menu,.ui,.settings,.context-menu,.in-game-menu{display:none !important;opacity:0 !important;pointer-events:none !important}
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: black;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    #status {
+      font-size: 1rem;
+      margin-top: 10px;
+      color: #00ff99;
+    }
+    #back {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    #back:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    canvas {
+      width: 96vw;
+      height: 96vh;
+      max-width: 1280px;
+      max-height: 720px;
+      background: black;
+      border: none;
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="title" id="gameTitle">Caricamento…</div>
-    <div style="flex:1"></div>
-    <button id="backBtn" class="btn" style="background:transparent;border:1px solid #333;color:var(--text);padding:6px 10px;border-radius:6px">⬅ Indietro</button>
-  </div>
-
-  <div class="content">
-    <div id="canvasWrap">
-      <!-- La canvas reale dell'emulatore (se è nell'HTML) dovrebbe avere id="canvas" -->
-      <canvas id="canvas"></canvas>
-    </div>
-
-    <div class="side">
-      <div><strong>Stato</strong></div>
-      <div id="status" class="muted">In attesa…</div>
-
-      <div style="margin-top:12px"><strong>Download ROM</strong></div>
-      <div class="progress"><div id="bar" class="bar"></div></div>
-      <div id="pct" class="muted">0%</div>
-
-      <div style="margin-top:12px"><strong>Debug / Log</strong></div>
-      <pre id="log" style="height:320px;overflow:auto;background:#070707;padding:8px;border-radius:6px;border:1px solid #222;color:#9f9;font-size:12px"></pre>
-    </div>
-  </div>
+  <canvas id="canvas"></canvas>
+  <div id="status">[STATUS] Inizializzazione...</div>
+  <div id="back" onclick="exitToLibrary()">← Torna alla Libreria</div>
 
   <script>
-    (function(){
-      const params = new URLSearchParams(location.search);
-      const id = params.get('id') || null;
-      const urlParam = params.get('url') || null;
+  // ==========================
+  //  CONFIGURAZIONE BASE
+  // ==========================
+  const statusEl = document.getElementById('status');
+  const gameId = new URLSearchParams(window.location.search).get('id');
 
-      const logEl = document.getElementById('log');
-      const statusEl = document.getElementById('status');
-      const pctEl = document.getElementById('pct');
-      const barEl = document.getElementById('bar');
-      const titleEl = document.getElementById('gameTitle');
+  const logStatus = (msg) => {
+    console.log(msg);
+    statusEl.textContent = "[STATUS] " + msg;
+  };
 
-      function log(...args){ console.log(...args); logEl.textContent += args.join(' ') + '\n'; logEl.scrollTop = logEl.scrollHeight; }
-      function setStatus(t){ statusEl.textContent = t; log('[STATUS] '+t) }
-      function setProgress(n){ barEl.style.width = Math.round(n*100) + '%'; pctEl.textContent = Math.round(n*100) + '%' }
+  const exitToLibrary = () => {
+    window.location.href = "index.html";
+  };
 
-      // Blocca fullscreen e tasti
-      function preventFullscreen(){
-        // override common requests
-        window.requestFullscreen = ()=>{ log('requestFullscreen bloccato'); return null; };
-        Element.prototype.requestFullscreen = function(){ log('element.requestFullscreen bloccato'); };
-        // blocco F11 / ESC
-        window.addEventListener('keydown', e => {
-          if(e.key === 'F11' || e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); log('Tasto fullscreen/esc bloccato: '+e.key) }
-        }, {capture:true});
-        // se c'è Module, impediamo richiesta fullscreen lato Emscripten
-        if(!window.Module) window.Module = {};
-        window.Module['requestFullscreen'] = ()=>{ log('Module.requestFullscreen bloccato'); return 0; };
+  // ==========================
+  //  BLOCCO MENU / FULLSCREEN
+  // ==========================
+  document.addEventListener("keydown", (e) => {
+    if (["F11", "Escape"].includes(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  // ==========================
+  //  DOWNLOAD ROM CON PROGRESSO
+  // ==========================
+  async function downloadWithProgress(url) {
+    logStatus("Download ROM da: " + url);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Errore HTTP: " + response.status);
+
+    const reader = response.body.getReader();
+    const contentLength = +response.headers.get("Content-Length");
+    let received = 0;
+    const chunks = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (contentLength) {
+        logStatus(`Scaricamento ROM: ${Math.floor(received / contentLength * 100)}%`);
       }
-      preventFullscreen();
+    }
 
-      // rimuove nodi HTML comunemente usati per menu
-      function removeEmuUI(){
-        const selectors = ['.emu-menu','.menu','.ui','#menu','#settings','.in-game-menu','.context-menu'];
-        selectors.forEach(sel => { document.querySelectorAll(sel).forEach(n=>{ n.remove(); log('rimosso: '+sel) })});
-        // nascondi ulteriori potenziali elementi dinamici
-        const style = document.createElement('style');
-        style.textContent = `${selectors.join(',')} { display:none !important; }`;
-        document.head.appendChild(style);
-      }
-      removeEmuUI();
+    const blob = new Blob(chunks);
+    const buffer = await blob.arrayBuffer();
+    return new Uint8Array(buffer);
+  }
 
-      // chiamata principale
-      (async function main(){
-        try{
-          setStatus('Preparazione...');
-          let game = null;
-          if(id){
-            setStatus('Caricamento games.json per trovare l\'id: '+id);
-            const r = await fetch('games.json', {cache:'no-store'});
-            if(!r.ok) throw new Error('games.json non trovato');
-            const games = await r.json();
-            game = games.find(g => g.id === id);
-            if(!game) throw new Error('Gioco non trovato per id: '+id);
-            titleEl.textContent = game.title || game.id;
-          } else if(urlParam){
-            game = { id: 'direct', title: 'ROM diretta', rom: urlParam, system: 'gba' };
-            titleEl.textContent = 'ROM diretta';
-          } else {
-            setStatus('Nessun id/url fornito');
-            throw new Error('Nessun id/url fornito nella querystring');
-          }
-
-          // Ottieni l'URL della rom
-          const romUrl = game.rom || game.url || game.src;
-          if(!romUrl) throw new Error('Nessun campo "rom" trovato in games.json per questo gioco');
-
-          setStatus('Download ROM da: ' + romUrl);
-          const arrayBuffer = await downloadWithProgress(romUrl, (p) => { setProgress(p); });
-          setStatus('Download completato (' + formatBytes(arrayBuffer.byteLength) + ')');
-
-          // proviamo a mettere la ROM in MEMFS (FS) se disponibile
-          const filename = determineFileNameFromUrl(romUrl) || (game.id + '.rom');
-          const fsPath = '/offline/' + filename;
-          const uint8 = new Uint8Array(arrayBuffer);
-
-          if(typeof FS !== 'undefined' && FS && FS.writeFile){
-            setStatus('Scrivo ROM in MEMFS: ' + fsPath);
-            try{
-              try{ // cancella se esiste
-                if(FS.analyzePath(fsPath).exists) FS.unlink(fsPath);
-              }catch(e){}
-              FS.writeFile(fsPath, uint8, { canOwn: true });
-              log('FS.writeFile OK: ' + fsPath);
-            }catch(e){
-              log('FS.writeFile fallita: ', e);
-            }
-            // se IDBFS è montato su /offline e serve sincronizzare:
-            try{
-              if(FS.syncfs){
-                setStatus('Sincronizzo MEMFS/IDBFS…');
-                await new Promise((res, rej)=> FS.syncfs(false, (err)=> err ? rej(err) : res()));
-                log('syncfs OK');
-              }
-            }catch(e){
-              log('syncfs errore', e);
-            }
-          } else {
-            log('FS non disponibile, scrivo blobURL');
-          }
-
-          // Proviamo a lanciare l'emulatore in vari modi comuni:
-          setStatus('Tentativo avvio emulatore (strategie multiple)');
-          const started = await tryStartEmulator({ game, romUrl, fsPath, uint8, filename });
-          if(started){
-            setStatus('Emulatore avviato ✔️');
-          } else {
-            setStatus('Nessuna strategia di avvio automatica ha funzionato — vedi log. Potrebbe essere necessario adattare il nome della funzione di avvio dell\'emulatore.');
-            log('Nessuna strategia di avvio automatica ha avuto successo. Se sai il nome della funzione JS/WASM che il port espone (es. startROMFromPath, load_rom, launchGameFromFS, ecc), modificarla in play.html nella funzione tryStartEmulator.');
-          }
-
-        }catch(err){
-          setStatus('ERRORE: ' + (err && err.message ? err.message : err));
-          log('ERRORE: ', err);
-        }
-      })();
-
-      // -- funzioni di supporto --
-
-      function determineFileNameFromUrl(u){
-        try{
-          const parsed = new URL(u);
-          const name = parsed.pathname.split('/').pop();
-          return name || null;
-        }catch(e){ return null; }
+  // ==========================
+  //  FUNZIONE PRINCIPALE
+  // ==========================
+  async function main() {
+    try {
+      if (!gameId) {
+        logStatus("ERRORE: parametro 'id' mancante.");
+        return;
       }
 
-      function formatBytes(n){
-        if(n<1024) return n+' B';
-        if(n<1024*1024) return (n/1024).toFixed(1)+' KB';
-        return (n/1024/1024).toFixed(2)+' MB';
+      logStatus("Caricamento games.json per trovare l'id: " + gameId);
+      const response = await fetch('games.json');
+      const games = await response.json();
+      const game = games.find(g => g.id === gameId);
+
+      if (!game) {
+        logStatus("ERRORE: Gioco non trovato nel file games.json");
+        return;
       }
 
-      async function downloadWithProgress(url, onProgress){
-        const r = await fetch(url, { mode: 'cors' });
-        if(!r.ok) throw new Error('Impossibile scaricare ROM: ' + r.status + ' ' + r.statusText);
-        if(!r.body) {
-          // fallback se response.body non disponibile
-          const ab = await r.arrayBuffer();
-          onProgress(1);
-          return ab;
-        }
-        const reader = r.body.getReader();
-        const contentLength = +r.headers.get('Content-Length') || 0;
-        let received = 0;
-        const chunks = [];
-        while(true){
-          const {done, value} = await reader.read();
-          if(done) break;
-          chunks.push(value);
-          received += value.length;
-          onProgress(contentLength ? (received / contentLength) : Math.min(0.99, received / (1024*1024))); // if unknown total, show growing progress
-        }
-        const ab = new Uint8Array(received);
-        let offset = 0;
-        for(const c of chunks){
-          ab.set(c, offset);
-          offset += c.length;
-        }
-        onProgress(1);
-        return ab.buffer;
-      }
+      const romUrl = game.url;
+      logStatus("Download ROM da: " + romUrl);
 
-      async function tryStartEmulator({game, romUrl, fsPath, uint8, filename}){
-        // STRATEGIA A: se esiste una funzione global nota, chiama direttamente (possibili nomi comuni)
-        const knownFns = [
-          'launchGame', 'loadROM', 'loadRom', 'startROM', 'startRom',
-          'loadROMFromURL', 'launchFromURL', 'load_rom', 'launch_from_fs',
-          'startEmulatorWithRom', 'start_game', 'runFromPath'
-        ];
-        for(const name of knownFns){
-          const fn = window[name] || (window.Module && window.Module[name]);
-          if(typeof fn === 'function'){
-            try{
-              log('Chiamo funzione globale nota: ' + name + ' (url passed)');
-              const res = fn(romUrl, fsPath, filename);
-              return true;
-            }catch(e){ log('Errore chiamando '+name, e) }
-          }
-        }
+      const romData = await downloadWithProgress(romUrl);
+      logStatus("ROM scaricata, avvio emulatore...");
 
-        // STRATEGIA B: se Module.ccall è disponibile e abbiamo scritto in FS, proviamo a chiamare funzioni WASM note
-        if(window.Module && typeof Module.ccall === 'function'){
-          // nomi WASM possibili (adatta se sai il nome reale)
-          const possible = ['load_rom_from_path','load_rom','run_with_rom','run_rom','launch_from_fs','se_load_settings','se_load_rom'];
-          for(const wasmName of possible){
-            try{
-              // NB: molti port espongono funzioni diverse; qui proviamo con stringa path se scritto in FS
-              const exist = Module[wasmName] || Module['_' + wasmName];
-              // In generale ccall ritorna 0/1 oppure void
-              log('Provo Module.ccall("' + wasmName + '", ...)');
-              try{
-                Module.ccall(wasmName, 'number', ['string'], [fsPath]);
-                log('Module.ccall('+wasmName+') invocato con path', fsPath);
-                return true;
-              }catch(e){
-                // prova senza FS path (magari la funzione vuole URL)
-                try{
-                  Module.ccall(wasmName, 'number', ['string'], [romUrl]);
-                  return true;
-                }catch(e2){
-                  // ignora
-                }
-              }
-            }catch(e){
-              log('Module.ccall('+wasmName+') non disponibile o fallita', e);
+      // ==========================
+      //  SKYEMU - AVVIO
+      // ==========================
+      const script = document.createElement("script");
+      script.src = "https://web.skyemu.app/SkyEmu.js";
+      document.body.appendChild(script);
+
+      script.onload = async () => {
+        logStatus("SkyEmu caricato. Avvio gioco...");
+        window.Module = {
+          canvas: document.getElementById("canvas"),
+          noInitialRun: true,
+          arguments: [],
+          preRun: [() => {
+            FS.writeFile("/game.gba", romData);
+          }],
+          onRuntimeInitialized: () => {
+            try {
+              Module.callMain(["/game.gba"]);
+              logStatus("Gioco avviato con successo!");
+            } catch (err) {
+              console.error(err);
+              logStatus("ERRORE durante l'avvio dell'emulatore");
             }
           }
-        }
+        };
+      };
 
-        // STRATEGIA C: se l'emulatore accetta blob URL (cioè una <input file> virtuale / API), creiamo un blob URL e proviamo a passarla
-        try{
-          const blob = new Blob([uint8], { type: 'application/octet-stream' });
-          const blobUrl = URL.createObjectURL(blob);
-          log('Created blob URL for ROM:', blobUrl);
+    } catch (err) {
+      console.error(err);
+      logStatus("ERRORE: " + err.message);
+    }
+  }
 
-          // prova a inserire un <a> o chiamare funzioni che prendono URL
-          for(const name of ['loadROMFromURL','loadFromURL','load_url','openURL']){
-            if(typeof window[name] === 'function'){
-              try{ window[name](blobUrl); return true }catch(e){ log('Errore calling ' + name, e) }
-            }
-            if(window.Module && typeof Module[name] === 'function'){
-              try{ Module[name](blobUrl); return true }catch(e){ log('Errore Module.'+name, e) }
-            }
-          }
-        }catch(e){ log('Creazione blobUrl fallita', e) }
-
-        // STRATEGIA D: se l'emulatore espone un oggetto global "EMULATOR" con metodo load, proviamo
-        const emuCandidates = ['EMULATOR','Emulator','emu','retroarch','VBA','jsnes'];
-        for(const n of emuCandidates){
-          const cand = window[n];
-          if(cand){
-            try{
-              if(typeof cand.load === 'function'){ cand.load(uint8); log('caricato via '+n+'.load'); return true }
-              if(typeof cand.loadROM === 'function'){ cand.loadROM(uint8); log('caricato via '+n+'.loadROM'); return true }
-              if(typeof cand.open === 'function'){ cand.open(uint8); log('caricato via '+n+'.open'); return true }
-            }catch(e){
-              log('Errore caricamento via '+n, e);
-            }
-          }
-        }
-
-        // fallback: non siamo riusciti ad automatizzare — mettiamo file in FS e lasciamo all'utente istruire il port
-        try{
-          if(typeof FS !== 'undefined' && FS && FS.writeFile){
-            log('ROM scritta in FS in: ' + fsPath + '. Se il tuo port usa questo path, prova a chiamare manualmente la funzione di avvio del port.');
-            return false;
-          } else {
-            log('ROM disponibile come Blob / ArrayBuffer. Se il port accetta file via drag&drop o via API, prova manualmente.');
-            return false;
-          }
-        }catch(e){
-          log('Errore finale', e);
-          return false;
-        }
-      }
-
-    })();
+  main();
   </script>
 </body>
 </html>
