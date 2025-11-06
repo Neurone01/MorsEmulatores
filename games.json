@@ -1,8 +1,7 @@
-[
-  {
-    "id": "pokemon_emerald",
-    "title": "Pokémon Versione Smeraldo",
-    "system": "gba",
-    "rom": "https://archive.org/download/pokemon-versione-smeraldo-pokemon-rapers/2207%20-%20Pokemon%20-%20Versione%20Smeraldo%20%28I%29%28Pokemon%20Rapers%29.gba"
-  }
-]
+{
+  "id": "firered_random",
+  "title": "FireRed Random ROM Hack",
+  "system": "gba",
+  "rom": "https://raw.githubusercontent.com/GodkuHacking/GBA-ROM-hacks/mind/rom%20hacks/FIREREDRANDOM.gba",
+  "thumbnail": ""
+}
