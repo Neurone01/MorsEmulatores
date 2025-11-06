@@ -142,9 +142,9 @@ async function loadLocalGames() {
 // 🔹 Funzione universale per caricare da GitHub e filtrare EUR
 async function loadGitHubGames(folder, system) {
   const covers = {
-    GBA: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Game_Boy_Advance_SP.png",
-    GBC: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Game-Boy-Color-Blue.jpg",
-    GB:  "https://upload.wikimedia.org/wikipedia/commons/0/0b/Game-Boy-FL.jpg"
+    GBA: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
+    GBC: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg",
+    GB:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg"
   };
   try {
     const res = await fetch(`https://api.github.com/repos/AlexBlackmore/roms/contents/${folder}`);
