@@ -264,4 +264,47 @@
           log('Created blob URL for ROM:', blobUrl);
 
           // prova a inserire un <a> o chiamare funzioni che prendono URL
-          for(const name of ['loadROMFromURL',]()
+          for(const name of ['loadROMFromURL','loadFromURL','load_url','openURL']){
+            if(typeof window[name] === 'function'){
+              try{ window[name](blobUrl); return true }catch(e){ log('Errore calling ' + name, e) }
+            }
+            if(window.Module && typeof Module[name] === 'function'){
+              try{ Module[name](blobUrl); return true }catch(e){ log('Errore Module.'+name, e) }
+            }
+          }
+        }catch(e){ log('Creazione blobUrl fallita', e) }
+
+        // STRATEGIA D: se l'emulatore espone un oggetto global "EMULATOR" con metodo load, proviamo
+        const emuCandidates = ['EMULATOR','Emulator','emu','retroarch','VBA','jsnes'];
+        for(const n of emuCandidates){
+          const cand = window[n];
+          if(cand){
+            try{
+              if(typeof cand.load === 'function'){ cand.load(uint8); log('caricato via '+n+'.load'); return true }
+              if(typeof cand.loadROM === 'function'){ cand.loadROM(uint8); log('caricato via '+n+'.loadROM'); return true }
+              if(typeof cand.open === 'function'){ cand.open(uint8); log('caricato via '+n+'.open'); return true }
+            }catch(e){
+              log('Errore caricamento via '+n, e);
+            }
+          }
+        }
+
+        // fallback: non siamo riusciti ad automatizzare — mettiamo file in FS e lasciamo all'utente istruire il port
+        try{
+          if(typeof FS !== 'undefined' && FS && FS.writeFile){
+            log('ROM scritta in FS in: ' + fsPath + '. Se il tuo port usa questo path, prova a chiamare manualmente la funzione di avvio del port.');
+            return false;
+          } else {
+            log('ROM disponibile come Blob / ArrayBuffer. Se il port accetta file via drag&drop o via API, prova manualmente.');
+            return false;
+          }
+        }catch(e){
+          log('Errore finale', e);
+          return false;
+        }
+      }
+
+    })();
+  </script>
+</body>
+</html>
