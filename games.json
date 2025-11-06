@@ -1,18 +1,8 @@
 [
   {
-    "id": "mario_gba",
-    "title": "Super Mario (GBA)",
-    "system": "GBA",
-    "rom": "roms/mario.gba",
-    "thumb": "thumbs/mario.png",
-    "notes": "Demo"
-  },
-  {
-    "id": "zelda_gba",
-    "title": "Zelda (GBA)",
-    "system": "GBA",
-    "rom": "roms/zelda.gba",
-    "thumb": "thumbs/zelda.png",
-    "notes": ""
+    "id": "pokemon_emerald",
+    "title": "Pokémon Versione Smeraldo",
+    "system": "gba",
+    "rom": "https://archive.org/download/pokemon-versione-smeraldo-pokemon-rapers/2207%20-%20Pokemon%20-%20Versione%20Smeraldo%20%28I%29%28Pokemon%20Rapers%29.gba"
   }
 ]
