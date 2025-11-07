@@ -1,18 +1,50 @@
 [
   {
     "id": "pokemon_emerald",
-    "name": "Pokémon Versione Smeraldo",
-    "platform": "GBA",
-    "image": "https://upload.wikimedia.org/wikipedia/en/6/6b/Pokemon_Emerald_cover.jpg",
+    "title": "Pokémon Versione Smeraldo",
+    "system": "gba",
+    "region": "EUR",
+    "tags": ["pokemon", "rpg", "nintendo"],
     "url": "https://files.catbox.moe/msei8x.gba"
   },
   {
     "id": "firered_random",
-    "name": "Pokémon FireRed Random",
-    "platform": "GBA",
-    "image": "https://upload.wikimedia.org/wikipedia/en/3/3c/Pokemon_FireRed_boxart.png",
+    "title": "Pokémon FireRed Randomizer",
+    "system": "gba",
+    "region": "EUR",
+    "tags": ["pokemon", "randomizer", "gba"],
     "url": "https://github.com/vbaemulator/GBA-Roms/raw/main/Pokemon%20X%20Inazuma%20Eleven%20v1.5.zip"
+  },
+  {
+    "id": "zelda_minishcap",
+    "title": "The Legend of Zelda – The Minish Cap",
+    "system": "gba",
+    "region": "EUR",
+    "tags": ["zelda", "action", "adventure"],
+    "url": "https://github.com/AlexBlackmore/roms/raw/master/gba/Zelda%20-%20The%20Minish%20Cap%20%28Europe%29.zip"
+  },
+  {
+    "id": "mario_kart_supercircuit",
+    "title": "Mario Kart – Super Circuit",
+    "system": "gba",
+    "region": "EUR",
+    "tags": ["mario", "racing", "nintendo"],
+    "url": "https://github.com/AlexBlackmore/roms/raw/master/gba/Mario%20Kart%20-%20Super%20Circuit%20%28Europe%29.zip"
+  },
+  {
+    "id": "pokemon_crystal",
+    "title": "Pokémon Cristallo Versione",
+    "system": "gbc",
+    "region": "EUR",
+    "tags": ["pokemon", "rpg", "color"],
+    "url": "https://github.com/AlexBlackmore/roms/raw/master/gbc/Pokemon%20-%20Crystal%20Version%20%28Europe%29.zip"
+  },
+  {
+    "id": "super_mario_land",
+    "title": "Super Mario Land",
+    "system": "gb",
+    "region": "EUR",
+    "tags": ["mario", "platform", "classic"],
+    "url": "https://github.com/AlexBlackmore/roms/raw/master/gb/Super%20Mario%20Land%20%28Europe%29.zip"
   }
 ]
-
-
