@@ -27,6 +27,25 @@
     border-radius: 8px;
     border: none;
     font-size: 1rem;
+    outline: none;
+    margin-bottom: 0.6rem;
+  }
+  .filters {
+    margin-top: 0.5rem;
+  }
+  .filter-btn {
+    background: #21262d;
+    color: #58a6ff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    margin: 0 0.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn.active {
+    background: #238636;
+    color: #fff;
   }
   .grid {
     display: grid;
@@ -64,6 +83,12 @@
     padding: 0.4rem;
     font-weight: 600;
   }
+  #loading {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+    color: #aaa;
+  }
   @media (min-width: 1200px) {
     .card img { height: 160px; }
   }
@@ -73,8 +98,16 @@
   <header>
     <h1>Mors Emulatores</h1>
     <input id="search" type="text" placeholder="Cerca un gioco...">
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Tutti</button>
+      <button class="filter-btn" data-filter="gba">GBA</button>
+      <button class="filter-btn" data-filter="gbc">GBC</button>
+      <button class="filter-btn" data-filter="gb">GB</button>
+    </div>
   </header>
+
   <main>
+    <div id="loading">Caricamento giochi...</div>
     <div id="game-list" class="grid"></div>
   </main>
 
@@ -85,7 +118,7 @@ const logos = {
   gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg",
 };
 
-// --- Helper per convertire link GitHub in jsDelivr ---
+// --- Conversione GitHub raw → jsDelivr ---
 function convertGitHubToJsDelivr(url) {
   if (url.includes("github.com") && url.includes("/raw/")) {
     return url
@@ -95,7 +128,7 @@ function convertGitHubToJsDelivr(url) {
   return url;
 }
 
-// --- Helper per rimuovere duplicati per titolo o id ---
+// --- Rimozione duplicati ---
 function dedupGames(games) {
   const seen = new Set();
   return games.filter(g => {
@@ -106,7 +139,7 @@ function dedupGames(games) {
   });
 }
 
-// --- Ottieni lista giochi dalle repo GitHub di AlexBlackmore ---
+// --- Recupera giochi dalle repo GitHub ---
 async function fetchGitHubGames() {
   const platforms = ["gba", "gbc", "gb"];
   let allGames = [];
@@ -123,7 +156,6 @@ async function fetchGitHubGames() {
         title: f.name.replace(/\.zip$/, ""),
         system: sys,
         region: "EUR",
-        tags: [sys],
         url: convertGitHubToJsDelivr(f.download_url || f.html_url)
       }));
 
@@ -133,7 +165,7 @@ async function fetchGitHubGames() {
   return allGames;
 }
 
-// --- Carica anche dal tuo games.json ---
+// --- Recupera giochi dal tuo games.json ---
 async function fetchLocalGames() {
   const res = await fetch("https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json");
   const data = await res.json();
@@ -142,41 +174,55 @@ async function fetchLocalGames() {
     title: g.title || g.name,
     system: g.system || g.platform?.toLowerCase() || "gba",
     region: g.region || "EUR",
-    tags: g.tags || [],
     url: convertGitHubToJsDelivr(g.url)
   }));
 }
 
-// --- Genera la card del gioco ---
+// --- Crea card gioco ---
 function createCard(game) {
   const img = logos[game.system] || logos.gba;
   return `
     <div class="card">
       <img src="${img}" alt="${game.system}">
-      <h3>${game.title}</h3>
+      <h3 title="${game.title}">${game.title}</h3>
       <a href="play.html?id=${encodeURIComponent(game.id)}">Gioca</a>
     </div>
   `;
 }
 
-// --- Rendering lista giochi ---
+// --- Renderizza lista ---
 function renderGames(games) {
-  const container = document.getElementById("game-list");
-  container.innerHTML = games.map(createCard).join("");
+  const list = document.getElementById("game-list");
+  const loading = document.getElementById("loading");
+  loading.style.display = "none";
+  list.innerHTML = games.map(createCard).join("");
 }
 
-// --- Funzione principale ---
+// --- Main ---
 async function main() {
   const local = await fetchLocalGames();
   const github = await fetchGitHubGames();
   let games = dedupGames([...local, ...github]);
   renderGames(games);
 
-  // Ricerca dinamica
-  document.getElementById("search").addEventListener("input", e => {
+  // ricerca
+  const search = document.getElementById("search");
+  search.addEventListener("input", e => {
     const q = e.target.value.toLowerCase();
     const filtered = games.filter(g => g.title.toLowerCase().includes(q));
     renderGames(filtered);
+  });
+
+  // filtri per piattaforma
+  const buttons = document.querySelectorAll(".filter-btn");
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      buttons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const f = btn.dataset.filter;
+      const filtered = f === "all" ? games : games.filter(g => g.system === f);
+      renderGames(filtered);
+    });
   });
 }
 
