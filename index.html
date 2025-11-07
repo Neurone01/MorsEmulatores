@@ -1,232 +1,186 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Retro Library</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mors Emulatores</title>
 <style>
-  :root {
-    --bg: #0b0b0d;
-    --card: #0f1114;
-    --muted: #97a0a9;
-    --accent: #00aaff;
-  }
   body {
-    margin: 0;
-    background: var(--bg);
+    background: #0d1117;
     color: #fff;
-    font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 0;
   }
   header {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 15px 20px;
-    background: #0d0f11;
-    border-bottom: 1px solid #111;
+    text-align: center;
+    padding: 1rem;
+    background: #161b22;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-  header h1 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-  }
-  .controls {
-    display: flex;
-    gap: 10px;
-    margin-left: auto;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  input,
-  select {
-    background: #14171a;
-    border: 1px solid #222;
-    color: #fff;
+  input {
+    width: 80%;
+    max-width: 500px;
+    padding: 0.6rem;
     border-radius: 8px;
-    padding: 8px;
-  }
-  main {
-    padding: 15px;
+    border: none;
+    font-size: 1rem;
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
   }
   .card {
-    background: var(--card);
+    background: #1c2128;
     border-radius: 12px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    transition: transform 0.2s;
   }
-  .thumb {
-    background: #0a0a0a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    height: 70px;
-  }
-  .thumb img {
-    max-width: 100%;
-    max-height: 100%;
+  .card:hover { transform: scale(1.03); }
+  .card img {
+    width: 100%;
+    height: 130px;
     object-fit: contain;
+    background: #111;
   }
-  .title {
+  .card h3 {
+    font-size: 1rem;
+    padding: 0.5rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card a {
+    display: block;
+    text-decoration: none;
+    color: #58a6ff;
+    padding: 0.4rem;
     font-weight: 600;
-    font-size: 14px;
-    line-height: 1.3;
-    word-break: break-word;
-    white-space: normal;
   }
-  .sub {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-  }
-  .play {
-    background: var(--accent);
-    border: 0;
-    border-radius: 8px;
-    color: #001018;
-    padding: 6px 8px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  #status {
-    padding: 10px 20px;
-    color: var(--muted);
-    font-size: 13px;
+  @media (min-width: 1200px) {
+    .card img { height: 160px; }
   }
 </style>
 </head>
 <body>
-<header>
-  <h1>Retro Library</h1>
-  <div class="controls">
-    <input id="q" placeholder="Cerca gioco..." />
-    <select id="systemFilter">
-      <option value="all">Tutti</option>
-      <option value="gba">GBA</option>
-      <option value="gbc">GBC</option>
-      <option value="gb">GB</option>
-    </select>
-  </div>
-</header>
-<div id="status">Caricamento giochi...</div>
-<main><div id="grid" class="grid"></div></main>
+  <header>
+    <h1>Mors Emulatores</h1>
+    <input id="search" type="text" placeholder="Cerca un gioco...">
+  </header>
+  <main>
+    <div id="game-list" class="grid"></div>
+  </main>
 
 <script>
-(async () => {
-  const GITHUB_OWNER = "AlexBlackmore";
-  const GITHUB_REPO = "roms";
-  const BRANCH = "master";
+const logos = {
+  gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
+  gb: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
+  gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg",
+};
 
-  const grid = document.getElementById("grid");
-  const status = document.getElementById("status");
-  const qInput = document.getElementById("q");
-  const sysFilter = document.getElementById("systemFilter");
+// --- Helper per convertire link GitHub in jsDelivr ---
+function convertGitHubToJsDelivr(url) {
+  if (url.includes("github.com") && url.includes("/raw/")) {
+    return url
+      .replace("github.com/", "cdn.jsdelivr.net/gh/")
+      .replace("/raw/", "@");
+  }
+  return url;
+}
 
-  const logos = {
-    gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
-    gb: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
-    gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg",
-  };
+// --- Helper per rimuovere duplicati per titolo o id ---
+function dedupGames(games) {
+  const seen = new Set();
+  return games.filter(g => {
+    const key = (g.title || g.name || g.id || "").toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
-  async function fetchFolder(folder) {
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${folder}`;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) return [];
-      return await res.json();
-    } catch {
-      return [];
-    }
+// --- Ottieni lista giochi dalle repo GitHub di AlexBlackmore ---
+async function fetchGitHubGames() {
+  const platforms = ["gba", "gbc", "gb"];
+  let allGames = [];
+
+  for (const sys of platforms) {
+    const apiUrl = `https://api.github.com/repos/AlexBlackmore/roms/contents/${sys}`;
+    const res = await fetch(apiUrl);
+    const files = await res.json();
+
+    const games = files
+      .filter(f => f.name && f.name.endsWith(".zip") && /(Europe|EUR)/i.test(f.name))
+      .map(f => ({
+        id: f.name.replace(/\s|\(|\)|\.zip/gi, "_").toLowerCase(),
+        title: f.name.replace(/\.zip$/, ""),
+        system: sys,
+        region: "EUR",
+        tags: [sys],
+        url: convertGitHubToJsDelivr(f.download_url || f.html_url)
+      }));
+
+    allGames.push(...games);
   }
 
-  function jsdelivr(folder, name) {
-    return `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}@${BRANCH}/${folder}/${encodeURIComponent(name)}`;
-  }
+  return allGames;
+}
 
-  // ✅ Filtra i giochi europei: contiene "EUR" o "Europe"
-  function isEur(name) {
-    return /\(.*(Europe|EUR).*?\)/i.test(name);
-  }
+// --- Carica anche dal tuo games.json ---
+async function fetchLocalGames() {
+  const res = await fetch("https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json");
+  const data = await res.json();
+  return data.map(g => ({
+    id: g.id,
+    title: g.title || g.name,
+    system: g.system || g.platform?.toLowerCase() || "gba",
+    region: g.region || "EUR",
+    tags: g.tags || [],
+    url: convertGitHubToJsDelivr(g.url)
+  }));
+}
 
-  function systemFromFolder(f) {
-    if (f.startsWith("gba")) return "gba";
-    if (f.startsWith("gbc")) return "gbc";
-    return "gb";
-  }
+// --- Genera la card del gioco ---
+function createCard(game) {
+  const img = logos[game.system] || logos.gba;
+  return `
+    <div class="card">
+      <img src="${img}" alt="${game.system}">
+      <h3>${game.title}</h3>
+      <a href="play.html?id=${encodeURIComponent(game.id)}">Gioca</a>
+    </div>
+  `;
+}
 
-  function cardHtml(g) {
-    const logo = logos[g.system] || logos.gba;
-    return `
-      <article class="card">
-        <div class="thumb"><img src="${logo}" alt="${g.system}"></div>
-        <div class="title">${g.title}</div>
-        <div class="sub">${g.system.toUpperCase()} • EUR</div>
-        <div class="foot">
-          <button class="play" data-url="${g.url}" data-title="${encodeURIComponent(g.title)}">PLAY</button>
-        </div>
-      </article>`;
-  }
+// --- Rendering lista giochi ---
+function renderGames(games) {
+  const container = document.getElementById("game-list");
+  container.innerHTML = games.map(createCard).join("");
+}
 
-  async function loadGames() {
-    const folders = ["gba", "gbc", "gb"];
-    const all = [];
-    for (const f of folders) {
-      const files = await fetchFolder(f);
-      for (const file of files) {
-        if (file.type !== "file") continue;
-        const ext = file.name.split(".").pop().toLowerCase();
-        if (!["gba", "gbc", "gb", "zip"].includes(ext)) continue;
-        if (!isEur(file.name)) continue; // ❗ mostriamo solo EUR
-        all.push({
-          title: file.name.replace(/\.[^.]+$/, ""),
-          system: systemFromFolder(f),
-          url: jsdelivr(f, file.name),
-        });
-      }
-    }
-    return all;
-  }
+// --- Funzione principale ---
+async function main() {
+  const local = await fetchLocalGames();
+  const github = await fetchGitHubGames();
+  let games = dedupGames([...local, ...github]);
+  renderGames(games);
 
-  function render(games) {
-    const q = qInput.value.toLowerCase();
-    const sys = sysFilter.value;
+  // Ricerca dinamica
+  document.getElementById("search").addEventListener("input", e => {
+    const q = e.target.value.toLowerCase();
+    const filtered = games.filter(g => g.title.toLowerCase().includes(q));
+    renderGames(filtered);
+  });
+}
 
-    const filtered = games.filter((g) => {
-      if (sys !== "all" && g.system !== sys) return false;
-      if (q && !g.title.toLowerCase().includes(q)) return false;
-      return true;
-    });
-
-    grid.innerHTML = filtered.map(cardHtml).join("") || "<div>Nessun gioco trovato</div>";
-    document.querySelectorAll(".play").forEach((b) => {
-      b.onclick = () => {
-        const url = b.dataset.url;
-        const title = decodeURIComponent(b.dataset.title);
-        location.href = `play.html?rom=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
-      };
-    });
-  }
-
-  const games = await loadGames();
-  status.textContent = `Giochi EUR caricati: ${games.length}`;
-  render(games);
-
-  qInput.oninput = sysFilter.onchange = () => render(games);
-})();
+main();
 </script>
 </body>
 </html>
