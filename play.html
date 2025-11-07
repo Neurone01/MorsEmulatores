@@ -1,371 +1,156 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Player - SkyEmu</title>
-<style>
-  :root{ --bg:#0b0b0b; --muted:#bdbdbd; --accent:#00aaff; }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--muted);font-family:Inter,Arial,Helvetica,sans-serif}
-  #topbar{ position:fixed; top:0; left:0; right:0; height:56px; display:flex; align-items:center; gap:12px; padding:8px 12px; z-index:99999; background:linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.25)); box-shadow:0 1px 0 rgba(255,255,255,0.02) inset; }
-  #back{ width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:8px; color:var(--accent); background:transparent; border:1px solid rgba(255,255,255,0.04); cursor:pointer; font-weight:700; }
-  #title{ font-weight:700; color:#fff; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70vw; }
-  #status{ font-size:13px; color:var(--muted); opacity:0.9; }
-  #playerWrap{ position:fixed; top:64px; bottom:12px; left:0; right:0; display:flex; align-items:center; justify-content:center; padding:12px; box-sizing:border-box; overflow:auto; }
-  canvas#canvas{ background:#111; border-radius:8px; box-shadow:0 8px 40px rgba(0,0,0,0.6); width: 800px; height:608px; max-width:100%; max-height:100%; display:block; outline:none; }
-  @media (max-width:900px){ canvas#canvas{ width:92vw; height:66vh;} #title{ max-width:60vw } }
-  input[type=file]{ display:none; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SkyEmu Player</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
 
-  /* Nascondi UI SkyEmu */
-  .hidden-by-playpage{ display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important; height:0 !important; width:0 !important; }
-  [class*="sky"], [id*="sky"], [class*="emu"], [id*="emu"], [class*="toolbar"], [class*="control"], [class*="menu"], [class*="panel"], [id*="panel"], .branding, .branding-wrap { display:none !important; }
-</style>
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+    }
+
+    #status {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ccc;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      z-index: 5;
+    }
+
+    #back {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(30, 30, 30, 0.8);
+      color: #00aaff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-family: sans-serif;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 0 10px #000;
+    }
+
+    #back:hover {
+      background: rgba(50, 50, 50, 0.9);
+      transform: scale(1.05);
+    }
+  </style>
 </head>
 <body>
-  <div id="topbar" role="banner">
-    <button id="back" title="Torna alla Libreria">←</button>
-    <div style="display:flex;flex-direction:column;gap:2px;">
-      <div id="title">Caricamento...</div>
-      <div id="status">Preparazione...</div>
-    </div>
-  </div>
 
-  <div id="playerWrap" role="main">
-    <canvas id="canvas" tabindex="0" class="emscripten"></canvas>
-  </div>
+<div id="status">Caricamento gioco...</div>
+<div id="back" onclick="exitToLibrary()">← Torna alla Libreria</div>
 
-  <input id="fileInput0" type="file" accept=".gba,.gb,.gbc,.zip,.nds,.sav" />
+<canvas id="canvas" class="emscripten"></canvas>
+<input id="fileInput0" type="file" style="display:none">
 
-  <!-- CORE emulator -->
-  <script src="https://web.skyemu.app/SkyEmu.js"></script>
+<!-- Core emulatore ufficiale -->
+<script src="https://web.skyemu.app/SkyEmu.js"></script>
 
-  <script>
-  (async function(){
-    "use strict";
+<script>
+"use strict";
 
-    const STATUS = document.getElementById('status');
-    const TITLE  = document.getElementById('title');
-    const BACK   = document.getElementById('back');
-    const CANVAS = document.getElementById('canvas');
-    const FILE_INPUT = document.getElementById('fileInput0');
+const params = new URLSearchParams(location.search);
+const romURL = decodeURIComponent(params.get("rom"));
+const title = decodeURIComponent(params.get("title") || "Gioco");
+const STATUS = document.getElementById("status");
 
-    BACK.onclick = ()=> {
-      try { if(document.fullscreenElement) document.exitFullscreen(); } catch(e){}
-      location.href = "index.html";
-    };
+function setStatus(msg) {
+  STATUS.textContent = msg;
+  console.log(msg);
+}
 
-    function setStatus(msg){
-      STATUS.textContent = msg;
-      console.log("[STATUS]", msg);
-    }
-    function setTitle(txt){ TITLE.textContent = txt; TITLE.title = txt; }
+function exitToLibrary() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  window.location.href = "index.html";
+}
 
-    // Aspetta che Module sia pronto
-    function waitModule(timeout=15000){
-      return new Promise((resolve)=>{
-        if(window.Module) return resolve(window.Module);
-        const t0 = Date.now();
-        const iv = setInterval(()=>{
-          if(window.Module){ 
-            clearInterval(iv); 
-            resolve(window.Module); 
-          }
-          if(Date.now()-t0 > timeout){ 
-            clearInterval(iv); 
-            resolve(null); 
-          }
-        },100);
-      });
-    }
-
-    // Nascondi UI SkyEmu usando keywords
-    const hideKeywords = [
-      "carica una rom","carica gioco","carica gioco recente","puoi anche trascinare",
-      "skyemu","speed","velocit","fps","esporta salva","export save","load rom","drag and drop",
-      "keyboard","controller","save","load"
-    ].map(s => s.toLowerCase());
-    
-    function hideByKeywords(root=document.body){
-      const nodes = Array.from(root.querySelectorAll('*'));
-      for(const n of nodes){
-        try{
-          if(n === document.body || n === document.documentElement) continue;
-          if(n.id && /topbar|back|title|status|canvas|playerWrap|fileInput0/i.test(n.id)) continue;
-          const txt = (n.innerText || "").toLowerCase().trim();
-          if(!txt) continue;
-          for(const kw of hideKeywords){
-            if(txt.includes(kw)){
-              n.classList.add('hidden-by-playpage');
-            }
-          }
-        }catch(e){}
+function waitForModule(timeout = 5000) {
+  return new Promise((resolve) => {
+    if (window.Module) return resolve(Module);
+    const start = Date.now();
+    const iv = setInterval(() => {
+      if (window.Module) {
+        clearInterval(iv);
+        resolve(Module);
       }
-    }
-
-    function hideLikelyModal(){
-      const candidates = document.querySelectorAll('div,section,dialog');
-      candidates.forEach(n=>{
-        try{
-          if(n === document.body || n.contains(CANVAS) || n.id=='topbar') return;
-          const txt = (n.innerText||'').toLowerCase();
-          if(!txt) return;
-          if(txt.includes('carica') || txt.includes('trascinare') || txt.includes('skyemu') || txt.includes('drop a file') || txt.includes('drag')) {
-            n.classList.add('hidden-by-playpage');
-            n.style.zIndex = '-99999';
-            n.style.pointerEvents = 'none';
-            n.style.visibility = 'hidden';
-            n.style.display = 'none';
-          }
-        }catch(e){}
-      });
-    }
-
-    // MutationObserver per nascondere elementi dinamici
-    const mo = new MutationObserver(()=>{ hideByKeywords(); hideLikelyModal(); });
-    mo.observe(document.documentElement || document.body, { childList:true, subtree:true, attributes:false });
-
-    hideByKeywords(); 
-    hideLikelyModal();
-    setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 600);
-    setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 2000);
-
-    // Keyboard forwarding al canvas
-    (function(){
-      CANVAS.tabIndex = 0;
-      CANVAS.addEventListener('mousedown', ()=> CANVAS.focus());
-      window.addEventListener('keydown', ev=>{
-        if(ev.ctrlKey || ev.metaKey) return;
-        try{
-          const k = new KeyboardEvent('keydown', { 
-            key:ev.key, code:ev.code, keyCode:ev.keyCode, 
-            bubbles:true, cancelable:true, 
-            shiftKey:ev.shiftKey, altKey:ev.altKey 
-          });
-          CANVAS.dispatchEvent(k);
-        }catch(e){}
-      }, {passive:true});
-      window.addEventListener('keyup', ev=>{
-        if(ev.ctrlKey || ev.metaKey) return;
-        try{
-          const k = new KeyboardEvent('keyup', { 
-            key:ev.key, code:ev.code, keyCode:ev.keyCode, 
-            bubbles:true, cancelable:true 
-          });
-          CANVAS.dispatchEvent(k);
-        }catch(e){}
-      }, {passive:true});
-    })();
-
-    // Trova il drop target di SkyEmu
-    function findDropTarget(){
-      const texts = ['carica una rom','puoi anche trascinare','drop','drag','carica gioco'];
-      const all = Array.from(document.querySelectorAll('div,section,form'));
-      for(const el of all){
-        try{
-          const t = (el.innerText||'').toLowerCase();
-          if(!t) continue;
-          for(const tt of texts){
-            if(t.includes(tt)) return el;
-          }
-        }catch(e){}
+      if (Date.now() - start > timeout) {
+        clearInterval(iv);
+        resolve(null);
       }
-      return document.querySelector('[ondrop], .drop, .dropzone') || document.body;
-    }
+    }, 100);
+  });
+}
 
-    // Simula drag/drop con DataTransfer
-    function simulateDropOnElement(file, targetEl){
-      try{
-        const dt = new DataTransfer();
-        dt.items.add(file);
+async function fetchROM(url) {
+  const r = await fetch(url, { mode: "cors" });
+  if (!r.ok) throw new Error("Download fallito: " + r.status);
+  return new Uint8Array(await r.arrayBuffer());
+}
 
-        function makeAndDispatch(type){
-          const ev = new DragEvent(type, { bubbles:true, cancelable:true, dataTransfer: dt });
-          targetEl.dispatchEvent(ev);
-        }
-        makeAndDispatch('dragenter');
-        makeAndDispatch('dragover');
-        makeAndDispatch('drop');
-        console.log('✅ Drop simulato su:', targetEl);
-        return true;
-      }catch(e){
-        console.warn('❌ simulateDropOnElement fallito:', e);
-        return false;
-      }
-    }
+function setFileInput(fileInput, file) {
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  fileInput.files = dt.files;
+  fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+}
 
-    // Fallback: imposta file input
-    function setFileInput(file){
-      try{
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        FILE_INPUT.files = dt.files;
-        FILE_INPUT.dispatchEvent(new Event('change', { bubbles:true }));
-        console.log('✅ File input change dispatched');
-      }catch(e){
-        console.warn('❌ setFileInput fallito:', e);
-      }
-    }
+function goFullscreen() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+  else if (el.msRequestFullscreen) el.msRequestFullscreen();
+}
 
-    // Clicca pulsanti "Load"
-    function clickLoadButtons(){
-      const labels = ['carica','load','start','open','apri','avvia','play'];
-      const btns = Array.from(document.querySelectorAll('button,a,input[type="button"],input[type="submit"]'));
-      for(const b of btns){
-        try{
-          const txt = (b.innerText || b.value || b.title || '').toLowerCase();
-          if(!txt) continue;
-          for(const l of labels){
-            if(txt.includes(l) && b.offsetParent !== null){
-              console.log('🖱️ Clicking button:', txt);
-              b.click();
-              return true;
-            }
-          }
-        }catch(e){}
-      }
-      return false;
-    }
+async function launchROM(url) {
+  setStatus("Scaricamento " + title + "...");
+  const Module = await waitForModule();
+  if (!Module) {
+    setStatus("Errore: Modulo non trovato!");
+    return;
+  }
 
-    // Download ROM con progress
-    async function fetchWithProgress(url, onProgress){
-      console.log("📥 Fetching:", url);
-      const r = await fetch(url, { mode:'cors' });
-      if(!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-      
-      const reader = r.body?.getReader();
-      if(!reader){
-        const ab = await r.arrayBuffer();
-        onProgress && onProgress(ab.byteLength, ab.byteLength);
-        return ab;
-      }
-      
-      const contentLength = r.headers.get('Content-Length');
-      const total = contentLength ? parseInt(contentLength) : undefined;
-      let received = 0;
-      const chunks = [];
-      
-      while(true){
-        const {done, value} = await reader.read();
-        if(done) break;
-        chunks.push(value);
-        received += value.length;
-        onProgress && onProgress(received, total);
-      }
-      
-      const out = new Uint8Array(received);
-      let offset = 0;
-      for(const c of chunks){ 
-        out.set(c, offset); 
-        offset += c.length; 
-      }
-      return out.buffer;
-    }
+  try {
+    const data = await fetchROM(url);
+    const filename = url.split("/").pop();
+    const blob = new Blob([data], { type: "application/octet-stream" });
+    const file = new File([blob], filename);
+    setFileInput(document.getElementById("fileInput0"), file);
 
-    // MAIN LOADER
-    async function main(){
-      setStatus('Preparazione...');
-      
-      // Leggi parametri URL
-      const params = new URLSearchParams(location.search);
-      const romUrl = params.get('rom');  // ← IMPORTANTE: legge 'rom'
-      const title = params.get('title') || 'Gioco';
-      const system = params.get('system') || 'gba';
-      
-      console.log("=== PLAYER START ===");
-      console.log("🎮 Title:", title);
-      console.log("📦 System:", system);
-      console.log("🔗 ROM URL:", romUrl);
-      
-      if(!romUrl){ 
-        setStatus('❌ Nessun ROM specificato. Usa ?rom=URL'); 
-        console.error("Missing ROM URL in query params");
-        return; 
-      }
-      
-      setTitle(title);
-      setStatus('Attesa Module SkyEmu...');
-      
-      // Aspetta Module
-      const mod = await waitModule(15000);
-      if(!mod) {
-        console.warn('⚠️ Module non rilevato entro timeout');
-      } else {
-        console.log('✅ Module pronto');
-      }
+    // Nasconde status e forza schermo intero
+    setTimeout(() => {
+      STATUS.style.display = "none";
+      goFullscreen();
+    }, 1000);
+  } catch (err) {
+    setStatus("Errore: " + err.message);
+    console.error(err);
+  }
+}
 
-      // Download ROM
-      setStatus('📥 Download ROM...');
-      let buffer;
-      try{
-        buffer = await fetchWithProgress(romUrl, (rec, tot)=>{
-          if(tot) {
-            const pct = Math.round((rec/tot)*100);
-            setStatus(`📥 Download: ${pct}% (${Math.round(rec/1024)} KB / ${Math.round(tot/1024)} KB)`);
-          } else {
-            setStatus(`📥 Download: ${Math.round(rec/1024)} KB`);
-          }
-        });
-        console.log(`✅ Downloaded ${buffer.byteLength} bytes`);
-      }catch(err){
-        console.error("❌ Download failed:", err);
-        setStatus('❌ ERRORE: ' + (err.message || err));
-        if((err.message||'').toLowerCase().includes('failed to fetch')) {
-          setStatus('❌ CORS Error - verifica che l\'URL supporti CORS (es. jsDelivr/catbox)');
-        }
-        return;
-      }
-
-      // Crea File object
-      const filename = decodeURIComponent((new URL(romUrl)).pathname.split('/').pop() || `game.${system}`);
-      const blob = new Blob([buffer], { type:'application/octet-stream' });
-      const file = new File([blob], filename, { type:'application/octet-stream' });
-      
-      console.log("📦 File creato:", filename, `(${file.size} bytes)`);
-
-      // Attendi un po' prima di inserire (da tempo a Module di inizializzarsi)
-      await new Promise(r=>setTimeout(r, 800));
-
-      // Tentativo 1: Simula drop
-      setStatus('🎮 Caricamento ROM (drop)...');
-      const dropTarget = findDropTarget();
-      let success = false;
-      
-      if(dropTarget){
-        console.log("🎯 Drop target trovato:", dropTarget);
-        success = simulateDropOnElement(file, dropTarget);
-        await new Promise(r=>setTimeout(r, 500));
-      }
-
-      // Tentativo 2: File input
-      if(!success){
-        console.log("🔄 Tentativo con file input...");
-        setStatus('🎮 Caricamento ROM (file input)...');
-        setFileInput(file);
-        await new Promise(r=>setTimeout(r, 400));
-      }
-
-      // Tentativo 3: Click su pulsanti Load
-      console.log("🔄 Ricerca pulsanti Load...");
-      clickLoadButtons();
-
-      // Pulizia UI finale
-      setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 500);
-      setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 1500);
-
-      setStatus('✅ ROM inserita. Se non parte, controlla la console (F12).');
-      console.log("=== PLAYER READY ===");
-
-      // Focus canvas per tastiera
-      try{ CANVAS.focus(); }catch(e){}
-    }
-
-    // START
-    main().catch(e=>{ 
-      console.error("❌ Main error:", e); 
-      setStatus('❌ ERRORE: ' + (e.message||e)); 
-    });
-
-  })();
-  </script>
+launchROM(romURL);
+</script>
 </body>
 </html>
