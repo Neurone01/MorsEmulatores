@@ -3,67 +3,264 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MorsEmulatores - Libreria</title>
+  <title>MorsEmulatores — Libreria</title>
+
   <style>
     :root{
-      --bg:#0b0b0b; --card:#111; --muted:#9aa; --accent:#00aaff;
-      --gap:12px;
+      --bg:#05060a;
+      --card:#0f1116;
+      --muted:#9fb0c0;
+      --accent:#00aaff;
+      --accent-2:#00ffd1;
+      --gap:14px;
+      --radius:12px;
+      --glass: rgba(255,255,255,0.03);
+      --shadow: 0 6px 18px rgba(0,0,0,0.6);
+      --touch-size:52px;
+      --max-width:1300px;
     }
-    html,body{height:100%;margin:0;background:var(--bg);color:#ddd;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-    header{display:flex;align-items:center;gap:16px;padding:16px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);position:sticky;top:0;z-index:10}
-    header h1{font-size:18px;margin:0}
-    .search{flex:1;display:flex;gap:8px}
-    .search input{flex:1;padding:10px;border-radius:10px;border:0;background:#111;color:#fff;outline:none}
-    .controls{display:flex;gap:8px;align-items:center}
-    .chip{background:#121212;padding:8px 10px;border-radius:999px;font-size:13px;color:var(--muted);cursor:pointer}
-    main{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--gap)}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:12px;display:flex;flex-direction:column;gap:10px;min-height:150px}
-    .thumb{height:80px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#0a0a0a;overflow:hidden}
-    .thumb img{max-width:100%;max-height:100%;object-fit:contain;display:block}
-    .meta{display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .title{font-weight:600;font-size:14px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .badge{font-size:12px;padding:4px 8px;border-radius:8px;background:#071b26;color:var(--accent)}
-    .tags{display:flex;gap:6px;flex-wrap:wrap}
-    .tag{font-size:11px;padding:4px 8px;border-radius:999px;background:#0f0f0f;color:var(--muted)}
-    footer{padding:14px;color:var(--muted);text-align:center}
-    /* responsive spacing for TV / big screens */
-    @media (min-width:1200px){
-      main{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));}
-      header h1{font-size:20px}
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,#04050a 0%, #071025 100%);
+      color:#e6f0f6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      scroll-behavior:smooth;
     }
+
+    .wrap{
+      max-width:var(--max-width);
+      margin:0 auto;
+      padding:18px;
+    }
+
+    header{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:14px;
+    }
+
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .brand h1{
+      font-size:18px;
+      margin:0;
+      letter-spacing:0.2px;
+    }
+    .brand p{
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .searchbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex:1;
+      margin-left:20px;
+    }
+
+    .searchbar input{
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:0;
+      background:rgba(255,255,255,0.03);
+      color:inherit;
+      outline: none;
+      font-size:15px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-left:12px;
+    }
+
+    .chip{
+      background:var(--glass);
+      color:var(--muted);
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,0.03);
+      transition:all .18s ease;
+      user-select:none;
+    }
+    .chip:active{ transform:translateY(1px) scale(.997) }
+    .chip.primary{ background:linear-gradient(90deg,var(--accent),#006bb3); color:#02121a; font-weight:600; border: 0; }
+
+    /* grid */
+    main{ display:grid; gap:var(--gap); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items:start; }
+    @media(min-width:900px){ main{ grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); } }
+    @media(min-width:1400px){ main{ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      border-radius:var(--radius);
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.02);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(0,0,0,0.7); }
+
+    .thumb{
+      height:96px;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+      overflow:hidden;
+      padding:8px;
+    }
+    .thumb img{ max-width:100%; max-height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
+
+    .title{
+      font-size:15px;
+      line-height:1.25;
+      font-weight:700;
+      color:#f1f8ff;
+      margin:0;
+      word-break:break-word; /* allows wrapping anywhere if needed */
+    }
+
+    .meta{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:auto; }
+
+    .badge{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(0,0,0,0.25);
+      color:var(--accent);
+      border:1px solid rgba(0,170,255,0.09);
+      font-weight:700;
+    }
+
+    .tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+    .tag{ font-size:12px; background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:8px; color:var(--muted); }
+
+    .card-footer{ display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:4px; }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      background:linear-gradient(90deg,var(--accent),#007bbd);
+      color:#02121a;
+      font-weight:700;
+      border-radius:10px;
+      border: none;
+      cursor:pointer;
+      text-decoration:none;
+      font-size:14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    }
+    .btn:active{ transform:translateY(1px) }
+    .btn.ghost{ background: rgba(255,255,255,0.03); color:var(--muted); font-weight:600; box-shadow:none }
+
+    /* back to top arrow */
+    #topBtn{
+      position:fixed;
+      right:20px;
+      bottom:20px;
+      width:56px;
+      height:56px;
+      border-radius:50%;
+      background:linear-gradient(180deg,#00b3ff,#006bb3);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:white;
+      font-size:22px;
+      cursor:pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      border:0;
+      transform:translateY(12px) scale(.95);
+      opacity:0;
+      transition: all .26s cubic-bezier(.2,.9,.28,1);
+      z-index:40;
+    }
+    #topBtn.show{ opacity:1; transform:translateY(0) scale(1); }
+
+    footer{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+      padding-bottom:32px;
+    }
+
+    /* responsive touches for mobile/TV */
+    @media (max-width:520px){
+      header{ flex-direction:column; align-items:stretch; gap:12px; }
+      .brand p{ display:none; }
+      .searchbar{ margin-left:0; }
+      .thumb{ height:88px; }
+      .btn{ padding:12px 16px; font-size:15px; }
+    }
+
+    /* keyboard focus */
+    .card:focus-within{ outline: 2px solid rgba(0,170,255,0.14); transform: translateY(-6px); }
+    .btn:focus{ outline: 2px solid rgba(0,170,255,0.16); }
+
   </style>
 </head>
 <body>
-  <header>
-    <h1>MorsEmulatores — Libreria giochi</h1>
-    <div class="search">
-      <input id="searchInput" placeholder="Cerca per titolo, tag o platform (es. pokemon / gba)..." />
-    </div>
-    <div class="controls">
-      <div class="chip" id="filterPlatform">Tutti</div>
-      <div class="chip" id="sortBtn">Ordina: Titolo ▲</div>
-    </div>
-  </header>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div style="width:44px;height:44px;border-radius:9px;background:linear-gradient(90deg,#001b2b,#003d52);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);">
+          EM
+        </div>
+        <div>
+          <h1>MorsEmulatores</h1>
+          <p>GBA / GBC / GB — Libreria giochi</p>
+        </div>
+      </div>
 
-  <main id="gameGrid" aria-live="polite"></main>
+      <div style="flex:1;display:flex;align-items:center;gap:12px;">
+        <div class="searchbar" style="flex:1">
+          <input id="searchInput" placeholder="Cerca titolo, piattaforma, tag... (es. pokemon, gba)" aria-label="Cerca giochi" />
+        </div>
 
-  <footer id="footer">Caricamento...</footer>
+        <div class="controls" style="margin-left:12px;">
+          <div class="chip" id="filterPlatform">Tutti</div>
+          <div class="chip" id="sortBtn">Ordina: A → Z</div>
+        </div>
+      </div>
+    </header>
+
+    <main id="gameGrid" aria-live="polite"></main>
+
+    <footer id="footer">Caricamento giochi…</footer>
+  </div>
+
+  <button id="topBtn" aria-label="Torna su" title="Torna in cima">↑</button>
 
 <script>
 "use strict";
 
-/*
-  Comportamento:
-  - carica games.json dal tuo raw GitHub (config.gamesJsonUrl)
-  - interroga GitHub (config.githubRepos) con endpoint git/trees/master?recursive=1
-  - filtra solo file europei (regex) e le estensioni attese (.gba, .gb, .gbc, .zip)
-  - converte link in jsDelivr CDN per scaricare
-  - unisce, rimuove duplicati, renderizza le card (usa logo per gba/gb/gbc)
-*/
-
+/* ---------- config (stesso del precedente) ---------- */
 const config = {
   gamesJsonUrl: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
-  // repos to scan: user/repo, branch, folders to extract
   githubRepos: [
     { user: "AlexBlackmore", repo: "roms", branch: "master", folders: ["gba","gbc","gb"] }
   ],
@@ -73,30 +270,27 @@ const config = {
     gb:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
     gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
   },
-  // keep EUR only automatically (filename contains Europe/ EUR)
   europeRegex: /\b(Europe|EUR|Europe\)|Europe\(|Europe,)\b/i
 };
 
+/* ---------- DOM ---------- */
 const DOM = {
   grid: document.getElementById("gameGrid"),
   footer: document.getElementById("footer"),
   search: document.getElementById("searchInput"),
   filterPlatform: document.getElementById("filterPlatform"),
-  sortBtn: document.getElementById("sortBtn")
+  sortBtn: document.getElementById("sortBtn"),
+  topBtn: document.getElementById("topBtn")
 };
 
-let allGames = []; // unified list
+let allGames = [];
 let currentPlatformFilter = "all";
 let sortAsc = true;
 
+/* ---------- helpers ---------- */
 function setFooter(msg){ DOM.footer.textContent = msg; }
-
-function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
-
-function normalizeTitleFromFilename(name){
-  // clean "Atv - Game (USA, Europe).gba" -> "Atv - Game (USA, Europe)"
-  return name.replace(/\.(gba|zip|gbc|gb)$/i,"").replace(/_/g," ").trim();
-}
+function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"") }
+function normalizeTitleFromFilename(name){ return name.replace(/\.(gba|zip|gbc|gb)$/i,"").replace(/_/g," ").trim(); }
 
 async function fetchJson(url){
   try{
@@ -109,7 +303,6 @@ async function fetchJson(url){
   }
 }
 
-/* --- GitHub tree fetcher (client-side) --- */
 async function fetchGithubTree(user, repo, branch){
   const apiUrl = `https://api.github.com/repos/${user}/${repo}/git/trees/${branch}?recursive=1`;
   try{
@@ -123,34 +316,21 @@ async function fetchGithubTree(user, repo, branch){
   }
 }
 
-function fileIsAcceptable(path){
-  const lower = path.toLowerCase();
-  return config.acceptExtensions.some(ext => lower.endsWith(ext));
-}
-
-function pathMatchesFolders(path, folders){
-  // check if path starts with one of folders + '/'
-  const parts = path.split("/");
-  return folders.includes(parts[0].toLowerCase());
-}
-
+function fileIsAcceptable(path){ const lower = path.toLowerCase(); return config.acceptExtensions.some(ext => lower.endsWith(ext)); }
+function pathMatchesFolders(path, folders){ const parts = path.split("/"); return folders.includes(parts[0].toLowerCase()); }
 function detectSystemFromPath(path){
   const p = path.toLowerCase();
   if(p.startsWith("gba/") || p.endsWith(".gba")) return "gba";
   if(p.startsWith("gbc/") || p.endsWith(".gbc")) return "gbc";
   if(p.startsWith("gb/")  || p.endsWith(".gb")) return "gb";
-  // fallback by extension
   if(p.endsWith(".gba")) return "gba";
   if(p.endsWith(".gbc")) return "gbc";
   if(p.endsWith(".gb")) return "gb";
   return "gba";
 }
-
 function toJsDelivrUrl(user, repo, branch, path){
-  // cdn.jsdelivr.net/gh/user/repo@branch/path
   return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${encodeURI(path)}`;
 }
-
 function entryFromGithubFile(user, repo, branch, filePath){
   const filename = filePath.split("/").pop();
   const title = normalizeTitleFromFilename(filename);
@@ -163,11 +343,10 @@ function entryFromGithubFile(user, repo, branch, filePath){
   };
 }
 
-/* --- Load games.json, then repo lists, merge and dedupe --- */
+/* ---------- load and merge ---------- */
 async function loadAllGames(){
   setFooter("Caricamento games.json ...");
   const gamesJson = await fetchJson(config.gamesJsonUrl) || [];
-  // normalize games.json entries
   const fromJson = (gamesJson || []).map(g => {
     const system = (g.system || g.platform || "gba").toLowerCase();
     return {
@@ -181,7 +360,7 @@ async function loadAllGames(){
     };
   });
 
-  setFooter("Scansione repo GitHub (potrebbe richiedere qualche secondo) …");
+  setFooter("Scansione repo GitHub...");
   let fromRepos = [];
   for(const repoInfo of config.githubRepos){
     const tree = await fetchGithubTree(repoInfo.user, repoInfo.repo, repoInfo.branch);
@@ -190,95 +369,97 @@ async function loadAllGames(){
       if(item.type !== "blob") continue;
       if(!fileIsAcceptable(item.path)) continue;
       if(!pathMatchesFolders(item.path, repoInfo.folders)) continue;
-      // only accept Europe's files
       if(!config.europeRegex.test(item.path) && !config.europeRegex.test(item.path.split("/").pop())) continue;
       fromRepos.push(entryFromGithubFile(repoInfo.user, repoInfo.repo, repoInfo.branch, item.path));
     }
   }
 
-  // merge and dedupe by normalized title (lower-case)
+  // merge and dedupe by normalized title
   const map = new Map();
-  // first repos (prefer CDN links)
   for(const g of fromRepos){
     const key = (g.title||"").toLowerCase();
     if(!map.has(key)) map.set(key, g);
   }
-  // then games.json (but do not overwrite existing repo entries if same key)
   for(const g of fromJson){
     const key = (g.title||"").toLowerCase();
     if(!map.has(key)){
       map.set(key, g);
     } else {
-      // if same title exists, but games.json has a direct file (catbox) prefer that download url
       const existing = map.get(key);
       if(existing && existing.source && existing.source.startsWith("github") && g.url && g.url.includes("catbox.moe")){
-        // replace to prefer user's direct file
         map.set(key, {...existing, url: g.url, source: "games.json+override"});
       }
     }
   }
 
-  allGames = Array.from(map.values()).map(g => {
-    // ensure required props
-    return {
-      id: g.id || slugify(g.title),
-      title: g.title || "Unknown",
-      system: (g.system||g.platform||"gba").toLowerCase(),
-      region: g.region || "EUR",
-      url: g.url || null,
-      tags: g.tags || [],
-      source: g.source || "unknown"
-    };
-  });
+  allGames = Array.from(map.values()).map(g => ({
+    id: g.id || slugify(g.title),
+    title: g.title || "Untitled",
+    system: (g.system||g.platform||"gba").toLowerCase(),
+    region: g.region || "EUR",
+    url: g.url || null,
+    tags: g.tags || [],
+    source: g.source || "unknown"
+  }));
 
   setFooter(`${allGames.length} giochi trovati (solo Europei).`);
   return allGames;
 }
 
-/* --- Render UI --- */
+/* ---------- render ---------- */
+function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
 function cardHtml(game){
-  // defensive programming: handle undefined fields
   const title = game.title || "Untitled";
   const system = (game.system || "gba").toLowerCase();
   const logo = config.logos[system] || config.logos.gba;
   const tags = (game.tags || []);
-  const region = game.region || "EUR";
-  const safeTitle = title.length > 45 ? title.slice(0,42) + "…" : title;
-
+  // NOTE: removed display of game.source on purpose (user requested)
   return `
-    <article class="card" data-id="${game.id}" data-system="${system}" data-title="${title.toLowerCase()}">
-      <div class="thumb"><img alt="${escapeHtml(title)}" src="${logo}" loading="lazy"></div>
-      <div class="meta">
-        <div class="title" title="${escapeHtml(title)}">${escapeHtml(safeTitle)}</div>
-        <div class="badge">${system.toUpperCase()}</div>
+    <article class="card" data-id="${escapeHtml(game.id)}" data-system="${escapeHtml(system)}" data-title="${escapeHtml(title.toLowerCase())}">
+      <div class="thumb" aria-hidden="true">
+        <img alt="${escapeHtml(title)}" src="${logo}" loading="lazy">
       </div>
-      <div class="tags">${tags.slice(0,4).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-        <div style="color:var(--muted);font-size:12px">${escapeHtml(game.source || "")}</div>
-        <div>
-          <button onclick="launchGame('${encodeURIComponent(game.id)}')" class="chip">Play ▶</button>
+
+      <div>
+        <div class="title">${escapeHtml(title)}</div>
+        <div class="tags">${tags.slice(0,4).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+      </div>
+
+      <div class="card-footer" style="margin-top:12px">
+        <div class="badge" aria-hidden="true">${system.toUpperCase()}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="launchGame('${encodeURIComponent(game.id)}')" title="Gioca ${escapeHtml(title)}">Play ▶</button>
+          <a class="btn ghost" href="${game.url ? escapeHtml(game.url) : '#'}" target="_blank" rel="noopener" title="Scarica ROM">Download</a>
         </div>
       </div>
     </article>
   `;
 }
 
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
-
 function renderList(list){
   DOM.grid.innerHTML = list.map(cardHtml).join("\n");
+  // attach keyboard-friendly behavior: open on Enter for focused card
+  document.querySelectorAll(".card").forEach(card => {
+    card.tabIndex = 0;
+    card.onkeydown = (e) => {
+      if(e.key === "Enter" || e.key === " ") {
+        const id = card.getAttribute("data-id");
+        launchGame(encodeURIComponent(id));
+      }
+    };
+  });
 }
 
+/* ---------- filtering / searching ---------- */
 function applyFiltersAndRender(){
   const q = (DOM.search.value||"").trim().toLowerCase();
   let list = allGames.slice();
 
-  // platform filter
   if(currentPlatformFilter !== "all"){
     list = list.filter(g => g.system === currentPlatformFilter);
   }
 
-  // search
   if(q){
     list = list.filter(g => {
       return (g.title || "").toLowerCase().includes(q) ||
@@ -287,20 +468,18 @@ function applyFiltersAndRender(){
     });
   }
 
-  // sort
   list.sort((a,b) => {
     const A = a.title.toLowerCase(), B = b.title.toLowerCase();
     return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
   });
 
   renderList(list);
-  setFooter(`${list.length} / ${allGames.length} giochi visualizzati`);
+  setFooter(`${list.length} / ${allGames.length} giochi`);
 }
 
-/* --- UI controls --- */
+/* ---------- UI events ---------- */
 DOM.search.addEventListener("input", () => applyFiltersAndRender());
 DOM.filterPlatform.addEventListener("click", () => {
-  // cycle: all -> gba -> gb -> gbc -> all
   const order = ["all","gba","gb","gbc"];
   const curIndex = order.indexOf(currentPlatformFilter);
   const next = order[(curIndex+1)%order.length];
@@ -310,11 +489,11 @@ DOM.filterPlatform.addEventListener("click", () => {
 });
 DOM.sortBtn.addEventListener("click", () => {
   sortAsc = !sortAsc;
-  DOM.sortBtn.textContent = `Ordina: Titolo ${sortAsc ? "▲" : "▼"}`;
+  DOM.sortBtn.textContent = `Ordina: ${sortAsc ? "A → Z" : "Z → A"}`;
   applyFiltersAndRender();
 });
 
-/* --- launching --- */
+/* ---------- launch ---------- */
 function findGameById(encId){
   const id = decodeURIComponent(encId);
   return allGames.find(g => g.id === id);
@@ -322,21 +501,32 @@ function findGameById(encId){
 
 function launchGame(encId){
   const game = findGameById(encId);
-  if(!game){ alert("Game non trovato"); return; }
-  // open player passing the download URL and title
+  if(!game){
+    alert("Gioco non trovato");
+    return;
+  }
   const params = new URLSearchParams();
   params.set("title", game.title);
   params.set("system", game.system);
   params.set("url", game.url);
-  // open play.html in same tab (or new depending on preference)
   window.location.href = `play.html?${params.toString()}`;
 }
 
-/* --- bootstrap --- */
+/* ---------- back to top ---------- */
+function handleScrollForTopBtn(){
+  if(window.scrollY > 380) DOM.topBtn.classList.add("show");
+  else DOM.topBtn.classList.remove("show");
+}
+DOM.topBtn.addEventListener("click", ()=> window.scrollTo({ top: 0, behavior: "smooth" }));
+window.addEventListener("scroll", handleScrollForTopBtn);
+
+/* ---------- bootstrap ---------- */
 (async function init(){
   setFooter("Inizializzazione…");
   await loadAllGames();
   applyFiltersAndRender();
+  // show top button appropriately
+  handleScrollForTopBtn();
 })();
 </script>
 </body>
