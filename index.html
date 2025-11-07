@@ -32,7 +32,6 @@
       scroll-behavior:smooth;
     }
 
-    /* container */
     .wrap{
       max-width:var(--max-width);
       margin:0 auto;
@@ -40,7 +39,6 @@
       padding-top: 8px;
     }
 
-    /* sticky header so search always visible */
     header{
       display:flex;
       gap:16px;
@@ -114,7 +112,6 @@
     .chip:active{ transform:translateY(1px) scale(.997) }
     .chip.primary{ background:linear-gradient(90deg,var(--accent),#006bb3); color:#02121a; font-weight:600; border: 0; }
 
-    /* grid */
     main{ display:grid; gap:var(--gap); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items:start; padding-top:10px;}
     @media(min-width:900px){ main{ grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); } }
     @media(min-width:1400px){ main{ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
@@ -150,8 +147,8 @@
       font-weight:700;
       color:#f1f8ff;
       margin:0;
-      word-break:break-word; /* allows wrapping anywhere if needed */
-      white-space: normal; /* ensure wrap */
+      word-break:break-word;
+      white-space: normal;
     }
 
     .meta{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:auto; }
@@ -187,9 +184,7 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.45);
     }
     .btn:active{ transform:translateY(1px) }
-    .btn.ghost{ background: rgba(255,255,255,0.03); color:var(--muted); font-weight:600; box-shadow:none }
 
-    /* back to top arrow */
     #topBtn{
       position:fixed;
       right:20px;
@@ -221,7 +216,6 @@
       padding-bottom:32px;
     }
 
-    /* responsive touches for mobile/TV */
     @media (max-width:520px){
       header{ flex-direction:column; align-items:stretch; gap:12px; padding:10px; border-radius:10px; }
       .brand p{ display:none; }
@@ -230,7 +224,6 @@
       .btn{ padding:12px 16px; font-size:15px; }
     }
 
-    /* keyboard focus */
     .card:focus-within{ outline: 2px solid rgba(0,170,255,0.14); transform: translateY(-6px); }
     .btn:focus{ outline: 2px solid rgba(0,170,255,0.16); }
 
@@ -336,13 +329,11 @@ function detectSystemFromPath(path){
   if(p.startsWith("gba/") || p.endsWith(".gba")) return "gba";
   if(p.startsWith("gbc/") || p.endsWith(".gbc")) return "gbc";
   if(p.startsWith("gb/")  || p.endsWith(".gb")) return "gb";
-  if(p.endsWith(".gba")) return "gba";
-  if(p.endsWith(".gbc")) return "gbc";
-  if(p.endsWith(".gb")) return "gb";
   return "gba";
 }
 function toJsDelivrUrl(user, repo, branch, path){
-  return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${encodeURI(path)}`;
+  // Codifica correttamente il path per jsDelivr
+  return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
 }
 function entryFromGithubFile(user, repo, branch, filePath){
   const filename = filePath.split("/").pop();
@@ -387,7 +378,7 @@ async function loadAllGames(){
     }
   }
 
-  // merge and dedupe by normalized title
+  // merge con priorità a games.json per gli URL
   const map = new Map();
   for(const g of fromRepos){
     const key = (g.title||"").toLowerCase();
@@ -399,6 +390,7 @@ async function loadAllGames(){
       map.set(key, g);
     } else {
       const existing = map.get(key);
+      // Se games.json ha un URL migliore (es. catbox), usalo
       if(existing && existing.source && existing.source.startsWith("github") && g.url && g.url.includes("catbox.moe")){
         map.set(key, {...existing, url: g.url, source: "games.json+override"});
       }
@@ -416,6 +408,15 @@ async function loadAllGames(){
   }));
 
   setFooter(`${allGames.length} giochi trovati (solo Europei).`);
+  
+  // Debug: mostra i primi 3 URL generati
+  console.log("=== SAMPLE GAME URLS ===");
+  allGames.slice(0, 3).forEach((g, i) => {
+    console.log(`[${i+1}] ${g.title} (${g.system})`);
+    console.log(`    URL: ${g.url}`);
+    console.log(`    Source: ${g.source}`);
+  });
+  
   return allGames;
 }
 
@@ -427,7 +428,7 @@ function cardHtml(game){
   const system = (game.system || "gba").toLowerCase();
   const logo = config.logos[system] || config.logos.gba;
   const tags = (game.tags || []);
-  // Download button REMOVED by request
+  
   return `
     <article class="card" data-id="${escapeHtml(game.id)}" data-system="${escapeHtml(system)}" data-title="${escapeHtml(title.toLowerCase())}">
       <div class="thumb" aria-hidden="true">
@@ -442,7 +443,7 @@ function cardHtml(game){
       <div class="card-footer" style="margin-top:12px">
         <div class="badge" aria-hidden="true">${system.toUpperCase()}</div>
         <div style="display:flex;gap:8px">
-          <button class="btn" onclick="launchGame('${encodeURIComponent(game.id)}')" title="Gioca ${escapeHtml(title)}">Play ▶</button>
+          <button class="btn" onclick="launchGame('${escapeHtml(game.id)}')" title="Gioca ${escapeHtml(title)}">Play ▶</button>
         </div>
       </div>
     </article>
@@ -456,7 +457,7 @@ function renderList(list){
     card.onkeydown = (e) => {
       if(e.key === "Enter" || e.key === " ") {
         const id = card.getAttribute("data-id");
-        launchGame(encodeURIComponent(id));
+        launchGame(id);
       }
     };
   });
@@ -505,21 +506,35 @@ DOM.sortBtn.addEventListener("click", () => {
 });
 
 /* ---------- launch ---------- */
-function findGameById(encId){
-  const id = decodeURIComponent(encId);
+function findGameById(id){
   return allGames.find(g => g.id === id);
 }
 
-function launchGame(encId){
-  const game = findGameById(encId);
+function launchGame(gameId){
+  const game = findGameById(gameId);
   if(!game){
     alert("Gioco non trovato");
+    console.error("Game not found:", gameId);
     return;
   }
+  
+  if(!game.url){
+    alert("URL ROM non disponibile per questo gioco");
+    console.error("Missing URL for game:", game);
+    return;
+  }
+  
+  // Debug
+  console.log("🎮 Launching:", game.title);
+  console.log("📦 System:", game.system);
+  console.log("🔗 URL:", game.url);
+  
+  // Passa i parametri corretti al player
   const params = new URLSearchParams();
+  params.set("rom", game.url);  // ← IMPORTANTE: usa 'rom' non 'url'
   params.set("title", game.title);
   params.set("system", game.system);
-  params.set("url", game.url);
+  
   window.location.href = `play.html?${params.toString()}`;
 }
 
