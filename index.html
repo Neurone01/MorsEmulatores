@@ -1,232 +1,343 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mors Emulatores</title>
-<style>
-  body {
-    background: #0d1117;
-    color: #fff;
-    font-family: "Poppins", sans-serif;
-    margin: 0;
-    padding: 0;
-  }
-  header {
-    text-align: center;
-    padding: 1rem;
-    background: #161b22;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  input {
-    width: 80%;
-    max-width: 500px;
-    padding: 0.6rem;
-    border-radius: 8px;
-    border: none;
-    font-size: 1rem;
-    outline: none;
-    margin-bottom: 0.6rem;
-  }
-  .filters {
-    margin-top: 0.5rem;
-  }
-  .filter-btn {
-    background: #21262d;
-    color: #58a6ff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    margin: 0 0.2rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .filter-btn.active {
-    background: #238636;
-    color: #fff;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
-  }
-  .card {
-    background: #1c2128;
-    border-radius: 12px;
-    overflow: hidden;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-    transition: transform 0.2s;
-  }
-  .card:hover { transform: scale(1.03); }
-  .card img {
-    width: 100%;
-    height: 130px;
-    object-fit: contain;
-    background: #111;
-  }
-  .card h3 {
-    font-size: 1rem;
-    padding: 0.5rem;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card a {
-    display: block;
-    text-decoration: none;
-    color: #58a6ff;
-    padding: 0.4rem;
-    font-weight: 600;
-  }
-  #loading {
-    text-align: center;
-    padding: 2rem;
-    font-size: 1.1rem;
-    color: #aaa;
-  }
-  @media (min-width: 1200px) {
-    .card img { height: 160px; }
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MorsEmulatores - Libreria</title>
+  <style>
+    :root{
+      --bg:#0b0b0b; --card:#111; --muted:#9aa; --accent:#00aaff;
+      --gap:12px;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:#ddd;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    header{display:flex;align-items:center;gap:16px;padding:16px;background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent);position:sticky;top:0;z-index:10}
+    header h1{font-size:18px;margin:0}
+    .search{flex:1;display:flex;gap:8px}
+    .search input{flex:1;padding:10px;border-radius:10px;border:0;background:#111;color:#fff;outline:none}
+    .controls{display:flex;gap:8px;align-items:center}
+    .chip{background:#121212;padding:8px 10px;border-radius:999px;font-size:13px;color:var(--muted);cursor:pointer}
+    main{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--gap)}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:12px;display:flex;flex-direction:column;gap:10px;min-height:150px}
+    .thumb{height:80px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#0a0a0a;overflow:hidden}
+    .thumb img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+    .meta{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .title{font-weight:600;font-size:14px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .badge{font-size:12px;padding:4px 8px;border-radius:8px;background:#071b26;color:var(--accent)}
+    .tags{display:flex;gap:6px;flex-wrap:wrap}
+    .tag{font-size:11px;padding:4px 8px;border-radius:999px;background:#0f0f0f;color:var(--muted)}
+    footer{padding:14px;color:var(--muted);text-align:center}
+    /* responsive spacing for TV / big screens */
+    @media (min-width:1200px){
+      main{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));}
+      header h1{font-size:20px}
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>Mors Emulatores</h1>
-    <input id="search" type="text" placeholder="Cerca un gioco...">
-    <div class="filters">
-      <button class="filter-btn active" data-filter="all">Tutti</button>
-      <button class="filter-btn" data-filter="gba">GBA</button>
-      <button class="filter-btn" data-filter="gbc">GBC</button>
-      <button class="filter-btn" data-filter="gb">GB</button>
+    <h1>MorsEmulatores — Libreria giochi</h1>
+    <div class="search">
+      <input id="searchInput" placeholder="Cerca per titolo, tag o platform (es. pokemon / gba)..." />
+    </div>
+    <div class="controls">
+      <div class="chip" id="filterPlatform">Tutti</div>
+      <div class="chip" id="sortBtn">Ordina: Titolo ▲</div>
     </div>
   </header>
 
-  <main>
-    <div id="loading">Caricamento giochi...</div>
-    <div id="game-list" class="grid"></div>
-  </main>
+  <main id="gameGrid" aria-live="polite"></main>
+
+  <footer id="footer">Caricamento...</footer>
 
 <script>
-const logos = {
-  gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
-  gb: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
-  gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg",
+"use strict";
+
+/*
+  Comportamento:
+  - carica games.json dal tuo raw GitHub (config.gamesJsonUrl)
+  - interroga GitHub (config.githubRepos) con endpoint git/trees/master?recursive=1
+  - filtra solo file europei (regex) e le estensioni attese (.gba, .gb, .gbc, .zip)
+  - converte link in jsDelivr CDN per scaricare
+  - unisce, rimuove duplicati, renderizza le card (usa logo per gba/gb/gbc)
+*/
+
+const config = {
+  gamesJsonUrl: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
+  // repos to scan: user/repo, branch, folders to extract
+  githubRepos: [
+    { user: "AlexBlackmore", repo: "roms", branch: "master", folders: ["gba","gbc","gb"] }
+  ],
+  acceptExtensions: [".gba",".gb",".gbc",".zip"],
+  logos: {
+    gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
+    gb:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
+    gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
+  },
+  // keep EUR only automatically (filename contains Europe/ EUR)
+  europeRegex: /\b(Europe|EUR|Europe\)|Europe\(|Europe,)\b/i
 };
 
-// --- Conversione GitHub raw → jsDelivr ---
-function convertGitHubToJsDelivr(url) {
-  if (url.includes("github.com") && url.includes("/raw/")) {
-    return url
-      .replace("github.com/", "cdn.jsdelivr.net/gh/")
-      .replace("/raw/", "@");
-  }
-  return url;
+const DOM = {
+  grid: document.getElementById("gameGrid"),
+  footer: document.getElementById("footer"),
+  search: document.getElementById("searchInput"),
+  filterPlatform: document.getElementById("filterPlatform"),
+  sortBtn: document.getElementById("sortBtn")
+};
+
+let allGames = []; // unified list
+let currentPlatformFilter = "all";
+let sortAsc = true;
+
+function setFooter(msg){ DOM.footer.textContent = msg; }
+
+function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
+
+function normalizeTitleFromFilename(name){
+  // clean "Atv - Game (USA, Europe).gba" -> "Atv - Game (USA, Europe)"
+  return name.replace(/\.(gba|zip|gbc|gb)$/i,"").replace(/_/g," ").trim();
 }
 
-// --- Rimozione duplicati ---
-function dedupGames(games) {
-  const seen = new Set();
-  return games.filter(g => {
-    const key = (g.title || g.name || g.id || "").toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+async function fetchJson(url){
+  try{
+    const r = await fetch(url);
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  }catch(e){
+    console.warn("fetchJson error",url,e);
+    return null;
+  }
+}
+
+/* --- GitHub tree fetcher (client-side) --- */
+async function fetchGithubTree(user, repo, branch){
+  const apiUrl = `https://api.github.com/repos/${user}/${repo}/git/trees/${branch}?recursive=1`;
+  try{
+    const r = await fetch(apiUrl, { headers: { Accept: "application/vnd.github.v3+json" }});
+    if(!r.ok) throw new Error(`GitHub API ${r.status}`);
+    const json = await r.json();
+    return json.tree || [];
+  }catch(e){
+    console.warn("fetchGithubTree failed", apiUrl, e);
+    return [];
+  }
+}
+
+function fileIsAcceptable(path){
+  const lower = path.toLowerCase();
+  return config.acceptExtensions.some(ext => lower.endsWith(ext));
+}
+
+function pathMatchesFolders(path, folders){
+  // check if path starts with one of folders + '/'
+  const parts = path.split("/");
+  return folders.includes(parts[0].toLowerCase());
+}
+
+function detectSystemFromPath(path){
+  const p = path.toLowerCase();
+  if(p.startsWith("gba/") || p.endsWith(".gba")) return "gba";
+  if(p.startsWith("gbc/") || p.endsWith(".gbc")) return "gbc";
+  if(p.startsWith("gb/")  || p.endsWith(".gb")) return "gb";
+  // fallback by extension
+  if(p.endsWith(".gba")) return "gba";
+  if(p.endsWith(".gbc")) return "gbc";
+  if(p.endsWith(".gb")) return "gb";
+  return "gba";
+}
+
+function toJsDelivrUrl(user, repo, branch, path){
+  // cdn.jsdelivr.net/gh/user/repo@branch/path
+  return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${encodeURI(path)}`;
+}
+
+function entryFromGithubFile(user, repo, branch, filePath){
+  const filename = filePath.split("/").pop();
+  const title = normalizeTitleFromFilename(filename);
+  const system = detectSystemFromPath(filePath);
+  const download = toJsDelivrUrl(user, repo, branch, filePath);
+  const id = slugify(`${system}_${title}`);
+  return {
+    id, title, system, region: (config.europeRegex.test(filename) ? "EUR" : "OTHER"),
+    url: download, source: `github:${user}/${repo}/${branch}`, rawPath: filePath, tags: []
+  };
+}
+
+/* --- Load games.json, then repo lists, merge and dedupe --- */
+async function loadAllGames(){
+  setFooter("Caricamento games.json ...");
+  const gamesJson = await fetchJson(config.gamesJsonUrl) || [];
+  // normalize games.json entries
+  const fromJson = (gamesJson || []).map(g => {
+    const system = (g.system || g.platform || "gba").toLowerCase();
+    return {
+      id: g.id || slugify(`${system}_${g.name||g.title||"game"}`),
+      title: (g.name || g.title || g.id || "Unknown"),
+      system,
+      region: g.region || (config.europeRegex.test((g.title||g.name||"")) ? "EUR" : (g.region||"")),
+      url: g.url,
+      source: "games.json",
+      tags: g.tags || []
+    };
   });
-}
 
-// --- Recupera giochi dalle repo GitHub ---
-async function fetchGitHubGames() {
-  const platforms = ["gba", "gbc", "gb"];
-  let allGames = [];
-
-  for (const sys of platforms) {
-    const apiUrl = `https://api.github.com/repos/AlexBlackmore/roms/contents/${sys}`;
-    const res = await fetch(apiUrl);
-    const files = await res.json();
-
-    const games = files
-      .filter(f => f.name && f.name.endsWith(".zip") && /(Europe|EUR)/i.test(f.name))
-      .map(f => ({
-        id: f.name.replace(/\s|\(|\)|\.zip/gi, "_").toLowerCase(),
-        title: f.name.replace(/\.zip$/, ""),
-        system: sys,
-        region: "EUR",
-        url: convertGitHubToJsDelivr(f.download_url || f.html_url)
-      }));
-
-    allGames.push(...games);
+  setFooter("Scansione repo GitHub (potrebbe richiedere qualche secondo) …");
+  let fromRepos = [];
+  for(const repoInfo of config.githubRepos){
+    const tree = await fetchGithubTree(repoInfo.user, repoInfo.repo, repoInfo.branch);
+    if(!tree || !tree.length) continue;
+    for(const item of tree){
+      if(item.type !== "blob") continue;
+      if(!fileIsAcceptable(item.path)) continue;
+      if(!pathMatchesFolders(item.path, repoInfo.folders)) continue;
+      // only accept Europe's files
+      if(!config.europeRegex.test(item.path) && !config.europeRegex.test(item.path.split("/").pop())) continue;
+      fromRepos.push(entryFromGithubFile(repoInfo.user, repoInfo.repo, repoInfo.branch, item.path));
+    }
   }
 
+  // merge and dedupe by normalized title (lower-case)
+  const map = new Map();
+  // first repos (prefer CDN links)
+  for(const g of fromRepos){
+    const key = (g.title||"").toLowerCase();
+    if(!map.has(key)) map.set(key, g);
+  }
+  // then games.json (but do not overwrite existing repo entries if same key)
+  for(const g of fromJson){
+    const key = (g.title||"").toLowerCase();
+    if(!map.has(key)){
+      map.set(key, g);
+    } else {
+      // if same title exists, but games.json has a direct file (catbox) prefer that download url
+      const existing = map.get(key);
+      if(existing && existing.source && existing.source.startsWith("github") && g.url && g.url.includes("catbox.moe")){
+        // replace to prefer user's direct file
+        map.set(key, {...existing, url: g.url, source: "games.json+override"});
+      }
+    }
+  }
+
+  allGames = Array.from(map.values()).map(g => {
+    // ensure required props
+    return {
+      id: g.id || slugify(g.title),
+      title: g.title || "Unknown",
+      system: (g.system||g.platform||"gba").toLowerCase(),
+      region: g.region || "EUR",
+      url: g.url || null,
+      tags: g.tags || [],
+      source: g.source || "unknown"
+    };
+  });
+
+  setFooter(`${allGames.length} giochi trovati (solo Europei).`);
   return allGames;
 }
 
-// --- Recupera giochi dal tuo games.json ---
-async function fetchLocalGames() {
-  const res = await fetch("https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json");
-  const data = await res.json();
-  return data.map(g => ({
-    id: g.id,
-    title: g.title || g.name,
-    system: g.system || g.platform?.toLowerCase() || "gba",
-    region: g.region || "EUR",
-    url: convertGitHubToJsDelivr(g.url)
-  }));
-}
+/* --- Render UI --- */
+function cardHtml(game){
+  // defensive programming: handle undefined fields
+  const title = game.title || "Untitled";
+  const system = (game.system || "gba").toLowerCase();
+  const logo = config.logos[system] || config.logos.gba;
+  const tags = (game.tags || []);
+  const region = game.region || "EUR";
+  const safeTitle = title.length > 45 ? title.slice(0,42) + "…" : title;
 
-// --- Crea card gioco ---
-function createCard(game) {
-  const img = logos[game.system] || logos.gba;
   return `
-    <div class="card">
-      <img src="${img}" alt="${game.system}">
-      <h3 title="${game.title}">${game.title}</h3>
-      <a href="play.html?id=${encodeURIComponent(game.id)}">Gioca</a>
-    </div>
+    <article class="card" data-id="${game.id}" data-system="${system}" data-title="${title.toLowerCase()}">
+      <div class="thumb"><img alt="${escapeHtml(title)}" src="${logo}" loading="lazy"></div>
+      <div class="meta">
+        <div class="title" title="${escapeHtml(title)}">${escapeHtml(safeTitle)}</div>
+        <div class="badge">${system.toUpperCase()}</div>
+      </div>
+      <div class="tags">${tags.slice(0,4).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+        <div style="color:var(--muted);font-size:12px">${escapeHtml(game.source || "")}</div>
+        <div>
+          <button onclick="launchGame('${encodeURIComponent(game.id)}')" class="chip">Play ▶</button>
+        </div>
+      </div>
+    </article>
   `;
 }
 
-// --- Renderizza lista ---
-function renderGames(games) {
-  const list = document.getElementById("game-list");
-  const loading = document.getElementById("loading");
-  loading.style.display = "none";
-  list.innerHTML = games.map(createCard).join("");
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+function renderList(list){
+  DOM.grid.innerHTML = list.map(cardHtml).join("\n");
 }
 
-// --- Main ---
-async function main() {
-  const local = await fetchLocalGames();
-  const github = await fetchGitHubGames();
-  let games = dedupGames([...local, ...github]);
-  renderGames(games);
+function applyFiltersAndRender(){
+  const q = (DOM.search.value||"").trim().toLowerCase();
+  let list = allGames.slice();
 
-  // ricerca
-  const search = document.getElementById("search");
-  search.addEventListener("input", e => {
-    const q = e.target.value.toLowerCase();
-    const filtered = games.filter(g => g.title.toLowerCase().includes(q));
-    renderGames(filtered);
-  });
+  // platform filter
+  if(currentPlatformFilter !== "all"){
+    list = list.filter(g => g.system === currentPlatformFilter);
+  }
 
-  // filtri per piattaforma
-  const buttons = document.querySelectorAll(".filter-btn");
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      buttons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const f = btn.dataset.filter;
-      const filtered = f === "all" ? games : games.filter(g => g.system === f);
-      renderGames(filtered);
+  // search
+  if(q){
+    list = list.filter(g => {
+      return (g.title || "").toLowerCase().includes(q) ||
+             (g.tags || []).join(" ").toLowerCase().includes(q) ||
+             (g.system || "").toLowerCase().includes(q);
     });
+  }
+
+  // sort
+  list.sort((a,b) => {
+    const A = a.title.toLowerCase(), B = b.title.toLowerCase();
+    return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
   });
+
+  renderList(list);
+  setFooter(`${list.length} / ${allGames.length} giochi visualizzati`);
 }
 
-main();
+/* --- UI controls --- */
+DOM.search.addEventListener("input", () => applyFiltersAndRender());
+DOM.filterPlatform.addEventListener("click", () => {
+  // cycle: all -> gba -> gb -> gbc -> all
+  const order = ["all","gba","gb","gbc"];
+  const curIndex = order.indexOf(currentPlatformFilter);
+  const next = order[(curIndex+1)%order.length];
+  currentPlatformFilter = next;
+  DOM.filterPlatform.textContent = (next === "all") ? "Tutti" : next.toUpperCase();
+  applyFiltersAndRender();
+});
+DOM.sortBtn.addEventListener("click", () => {
+  sortAsc = !sortAsc;
+  DOM.sortBtn.textContent = `Ordina: Titolo ${sortAsc ? "▲" : "▼"}`;
+  applyFiltersAndRender();
+});
+
+/* --- launching --- */
+function findGameById(encId){
+  const id = decodeURIComponent(encId);
+  return allGames.find(g => g.id === id);
+}
+
+function launchGame(encId){
+  const game = findGameById(encId);
+  if(!game){ alert("Game non trovato"); return; }
+  // open player passing the download URL and title
+  const params = new URLSearchParams();
+  params.set("title", game.title);
+  params.set("system", game.system);
+  params.set("url", game.url);
+  // open play.html in same tab (or new depending on preference)
+  window.location.href = `play.html?${params.toString()}`;
+}
+
+/* --- bootstrap --- */
+(async function init(){
+  setFooter("Inizializzazione…");
+  await loadAllGames();
+  applyFiltersAndRender();
+})();
 </script>
 </body>
 </html>
