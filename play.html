@@ -16,9 +16,8 @@
   @media (max-width:900px){ canvas#canvas{ width:92vw; height:66vh;} #title{ max-width:60vw } }
   input[type=file]{ display:none; }
 
-  /* Aggressive hide rules (can be expanded) */
+  /* Nascondi UI SkyEmu */
   .hidden-by-playpage{ display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important; height:0 !important; width:0 !important; }
-  /* very broad rules to hide likely skyemu UI elements (we'll also use JS to hide by text) */
   [class*="sky"], [id*="sky"], [class*="emu"], [id*="emu"], [class*="toolbar"], [class*="control"], [class*="menu"], [class*="panel"], [id*="panel"], .branding, .branding-wrap { display:none !important; }
 </style>
 </head>
@@ -61,30 +60,36 @@
     }
     function setTitle(txt){ TITLE.textContent = txt; TITLE.title = txt; }
 
-    // Wait for Module (SkyEmu) to appear
-    function waitModule(timeout=10000){
-      return new Promise(resolve=>{
+    // Aspetta che Module sia pronto
+    function waitModule(timeout=15000){
+      return new Promise((resolve)=>{
         if(window.Module) return resolve(window.Module);
         const t0 = Date.now();
         const iv = setInterval(()=>{
-          if(window.Module){ clearInterval(iv); resolve(window.Module); }
-          if(Date.now()-t0 > timeout){ clearInterval(iv); resolve(null); }
+          if(window.Module){ 
+            clearInterval(iv); 
+            resolve(window.Module); 
+          }
+          if(Date.now()-t0 > timeout){ 
+            clearInterval(iv); 
+            resolve(null); 
+          }
         },100);
       });
     }
 
-    // Aggressive DOM clean - hide nodes containing certain Italian/English keywords
+    // Nascondi UI SkyEmu usando keywords
     const hideKeywords = [
-      "Carica una ROM","Carica Gioco","Carica Gioco recente","Carica una ROM","Puoi anche trascinare",
-      "SkyEmu","speed","velocit","fps","Esporta Salva","Export Save","Load ROM","Drag and drop",
-      "Keyboard","Controller","Save","Load"
+      "carica una rom","carica gioco","carica gioco recente","puoi anche trascinare",
+      "skyemu","speed","velocit","fps","esporta salva","export save","load rom","drag and drop",
+      "keyboard","controller","save","load"
     ].map(s => s.toLowerCase());
+    
     function hideByKeywords(root=document.body){
       const nodes = Array.from(root.querySelectorAll('*'));
       for(const n of nodes){
         try{
           if(n === document.body || n === document.documentElement) continue;
-          // skip our topbar and canvas
           if(n.id && /topbar|back|title|status|canvas|playerWrap|fileInput0/i.test(n.id)) continue;
           const txt = (n.innerText || "").toLowerCase().trim();
           if(!txt) continue;
@@ -97,7 +102,6 @@
       }
     }
 
-    // More robust: hide nodes that have many child texts like the modal
     function hideLikelyModal(){
       const candidates = document.querySelectorAll('div,section,dialog');
       candidates.forEach(n=>{
@@ -105,7 +109,6 @@
           if(n === document.body || n.contains(CANVAS) || n.id=='topbar') return;
           const txt = (n.innerText||'').toLowerCase();
           if(!txt) return;
-          // If contains 'carica' or 'trascinare' or 'skyemu' strongly hide
           if(txt.includes('carica') || txt.includes('trascinare') || txt.includes('skyemu') || txt.includes('drop a file') || txt.includes('drag')) {
             n.classList.add('hidden-by-playpage');
             n.style.zIndex = '-99999';
@@ -117,57 +120,59 @@
       });
     }
 
-    // MutationObserver to hide newly injected UI constantly
+    // MutationObserver per nascondere elementi dinamici
     const mo = new MutationObserver(()=>{ hideByKeywords(); hideLikelyModal(); });
     mo.observe(document.documentElement || document.body, { childList:true, subtree:true, attributes:false });
 
-    // run immediate and delayed cleanup multiple times
-    hideByKeywords(); hideLikelyModal();
+    hideByKeywords(); 
+    hideLikelyModal();
     setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 600);
     setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 2000);
 
-    // Keyboard forwarding to canvas
+    // Keyboard forwarding al canvas
     (function(){
       CANVAS.tabIndex = 0;
       CANVAS.addEventListener('mousedown', ()=> CANVAS.focus());
       window.addEventListener('keydown', ev=>{
         if(ev.ctrlKey || ev.metaKey) return;
         try{
-          const k = new KeyboardEvent('keydown', { key:ev.key, code:ev.code, keyCode:ev.keyCode, bubbles:true, cancelable:true, shiftKey:ev.shiftKey, altKey:ev.altKey });
+          const k = new KeyboardEvent('keydown', { 
+            key:ev.key, code:ev.code, keyCode:ev.keyCode, 
+            bubbles:true, cancelable:true, 
+            shiftKey:ev.shiftKey, altKey:ev.altKey 
+          });
           CANVAS.dispatchEvent(k);
         }catch(e){}
       }, {passive:true});
       window.addEventListener('keyup', ev=>{
         if(ev.ctrlKey || ev.metaKey) return;
         try{
-          const k = new KeyboardEvent('keyup', { key:ev.key, code:ev.code, keyCode:ev.keyCode, bubbles:true, cancelable:true });
+          const k = new KeyboardEvent('keyup', { 
+            key:ev.key, code:ev.code, keyCode:ev.keyCode, 
+            bubbles:true, cancelable:true 
+          });
           CANVAS.dispatchEvent(k);
         }catch(e){}
       }, {passive:true});
     })();
 
-    // Try to find a "drop target" element - one that contains the Italian text from SkyEmu
+    // Trova il drop target di SkyEmu
     function findDropTarget(){
-      // first try to find elements that likely are the drop area
-      const texts = ['carica una rom','puoi anche trascinare','drop','drag','carica gioco','carica una rom'];
+      const texts = ['carica una rom','puoi anche trascinare','drop','drag','carica gioco'];
       const all = Array.from(document.querySelectorAll('div,section,form'));
       for(const el of all){
         try{
           const t = (el.innerText||'').toLowerCase();
           if(!t) continue;
           for(const tt of texts){
-            if(t.includes(tt)){
-              return el;
-            }
+            if(t.includes(tt)) return el;
           }
         }catch(e){}
       }
-      // fallback: elements having ondrop or drop related attributes
-      const withOnDrop = document.querySelector('[ondrop], .drop, .dropzone') || document.body;
-      return withOnDrop;
+      return document.querySelector('[ondrop], .drop, .dropzone') || document.body;
     }
 
-    // Simulate drag/drop with DataTransfer (modern browsers support DataTransfer())
+    // Simula drag/drop con DataTransfer
     function simulateDropOnElement(file, targetEl){
       try{
         const dt = new DataTransfer();
@@ -180,24 +185,28 @@
         makeAndDispatch('dragenter');
         makeAndDispatch('dragover');
         makeAndDispatch('drop');
-        console.log('simulated drop on', targetEl);
+        console.log('✅ Drop simulato su:', targetEl);
         return true;
       }catch(e){
-        console.warn('simulateDropOnElement failed', e);
+        console.warn('❌ simulateDropOnElement fallito:', e);
         return false;
       }
     }
 
-    // Set file input programmatically (fallback)
+    // Fallback: imposta file input
     function setFileInput(file){
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      FILE_INPUT.files = dt.files;
-      FILE_INPUT.dispatchEvent(new Event('change', { bubbles:true }));
-      console.log('file input change dispatched');
+      try{
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        FILE_INPUT.files = dt.files;
+        FILE_INPUT.dispatchEvent(new Event('change', { bubbles:true }));
+        console.log('✅ File input change dispatched');
+      }catch(e){
+        console.warn('❌ setFileInput fallito:', e);
+      }
     }
 
-    // Attempt to click common 'Load' buttons
+    // Clicca pulsanti "Load"
     function clickLoadButtons(){
       const labels = ['carica','load','start','open','apri','avvia','play'];
       const btns = Array.from(document.querySelectorAll('button,a,input[type="button"],input[type="submit"]'));
@@ -207,7 +216,7 @@
           if(!txt) continue;
           for(const l of labels){
             if(txt.includes(l) && b.offsetParent !== null){
-              console.log('clicking button', txt, b);
+              console.log('🖱️ Clicking button:', txt);
               b.click();
               return true;
             }
@@ -217,20 +226,24 @@
       return false;
     }
 
-    // Download ROM with progress (CORS applies)
+    // Download ROM con progress
     async function fetchWithProgress(url, onProgress){
+      console.log("📥 Fetching:", url);
       const r = await fetch(url, { mode:'cors' });
-      if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText);
+      if(!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+      
       const reader = r.body?.getReader();
       if(!reader){
         const ab = await r.arrayBuffer();
         onProgress && onProgress(ab.byteLength, ab.byteLength);
         return ab;
       }
+      
       const contentLength = r.headers.get('Content-Length');
       const total = contentLength ? parseInt(contentLength) : undefined;
       let received = 0;
       const chunks = [];
+      
       while(true){
         const {done, value} = await reader.read();
         if(done) break;
@@ -238,104 +251,119 @@
         received += value.length;
         onProgress && onProgress(received, total);
       }
+      
       const out = new Uint8Array(received);
       let offset = 0;
-      for(const c of chunks){ out.set(c, offset); offset += c.length; }
+      for(const c of chunks){ 
+        out.set(c, offset); 
+        offset += c.length; 
+      }
       return out.buffer;
     }
 
-    // Main loader: uses ?rom=URL or ?id=... (games.json)
+    // MAIN LOADER
     async function main(){
       setStatus('Preparazione...');
+      
+      // Leggi parametri URL
       const params = new URLSearchParams(location.search);
-      const romParam = params.get('rom');
-      const idParam  = params.get('id');
-      let romUrl = romParam ? decodeURIComponent(romParam) : null;
-      let name   = null;
-
-      if(idParam && !romUrl){
-        setStatus('Caricamento games.json per id: ' + idParam);
-        try{
-          const gamesUrl = (new URL('games.json', location.href)).toString();
-          const r = await fetch(gamesUrl, { mode:'cors' });
-          if(!r.ok) throw new Error('games.json HTTP ' + r.status);
-          const list = await r.json();
-          const entry = Array.isArray(list) ? list.find(e=>e.id===idParam) : (list[idParam]||null);
-          if(!entry){ setStatus('ERRORE: id non trovato in games.json'); console.warn(list); return; }
-          romUrl = entry.url; name = entry.name || entry.title || idParam;
-        }catch(e){
-          console.error(e);
-          setStatus('ERRORE caricamento games.json: ' + e.message);
-          return;
-        }
+      const romUrl = params.get('rom');  // ← IMPORTANTE: legge 'rom'
+      const title = params.get('title') || 'Gioco';
+      const system = params.get('system') || 'gba';
+      
+      console.log("=== PLAYER START ===");
+      console.log("🎮 Title:", title);
+      console.log("📦 System:", system);
+      console.log("🔗 ROM URL:", romUrl);
+      
+      if(!romUrl){ 
+        setStatus('❌ Nessun ROM specificato. Usa ?rom=URL'); 
+        console.error("Missing ROM URL in query params");
+        return; 
       }
-      if(!romUrl){ setStatus('Nessun ROM specificato. Usa ?rom=URL o ?id=game_id'); return; }
-      setTitle(name || romUrl.split('/').pop());
-      setStatus('Download ROM da: ' + romUrl);
+      
+      setTitle(title);
+      setStatus('Attesa Module SkyEmu...');
+      
+      // Aspetta Module
+      const mod = await waitModule(15000);
+      if(!mod) {
+        console.warn('⚠️ Module non rilevato entro timeout');
+      } else {
+        console.log('✅ Module pronto');
+      }
 
-      // Wait a bit for Module to be present (so SkyEmu can react to file events)
-      const mod = await waitModule(10000);
-      if(!mod) console.warn('Module non rilevato entro timeout (proseguo comunque)');
-
-      // Download
+      // Download ROM
+      setStatus('📥 Download ROM...');
       let buffer;
       try{
         buffer = await fetchWithProgress(romUrl, (rec, tot)=>{
-          if(tot) setStatus(`Scaricato ${Math.round(rec/1024)} KB / ${Math.round(tot/1024)} KB`);
-          else setStatus(`Scaricato ${Math.round(rec/1024)} KB`);
+          if(tot) {
+            const pct = Math.round((rec/tot)*100);
+            setStatus(`📥 Download: ${pct}% (${Math.round(rec/1024)} KB / ${Math.round(tot/1024)} KB)`);
+          } else {
+            setStatus(`📥 Download: ${Math.round(rec/1024)} KB`);
+          }
         });
+        console.log(`✅ Downloaded ${buffer.byteLength} bytes`);
       }catch(err){
-        console.error(err);
-        setStatus('ERRORE: ' + (err.message || err));
-        if((err.message||'').toLowerCase().includes('failed to fetch')) setStatus('ERRORE: impossibile scaricare (CORS?) - usa host con CORS abilitato (catbox/jsdelivr).');
+        console.error("❌ Download failed:", err);
+        setStatus('❌ ERRORE: ' + (err.message || err));
+        if((err.message||'').toLowerCase().includes('failed to fetch')) {
+          setStatus('❌ CORS Error - verifica che l\'URL supporti CORS (es. jsDelivr/catbox)');
+        }
         return;
       }
 
-      // Prepare File object
-      const filename = decodeURIComponent((new URL(romUrl)).pathname.split('/').pop() || 'game.gba');
+      // Crea File object
+      const filename = decodeURIComponent((new URL(romUrl)).pathname.split('/').pop() || `game.${system}`);
       const blob = new Blob([buffer], { type:'application/octet-stream' });
       const file = new File([blob], filename, { type:'application/octet-stream' });
+      
+      console.log("📦 File creato:", filename, `(${file.size} bytes)`);
 
-      // First attempt: simulate drop on the emulator's drop target (if it exists)
-      setStatus('Inserimento ROM (simulo drop) ...');
+      // Attendi un po' prima di inserire (da tempo a Module di inizializzarsi)
+      await new Promise(r=>setTimeout(r, 800));
+
+      // Tentativo 1: Simula drop
+      setStatus('🎮 Caricamento ROM (drop)...');
       const dropTarget = findDropTarget();
-      let dropped = false;
+      let success = false;
+      
       if(dropTarget){
-        try{
-          dropped = simulateDropOnElement(file, dropTarget);
-          // small delay to let emulator pick it up
-          await new Promise(r=>setTimeout(r, 400));
-        }catch(e){ console.warn('drop error', e); dropped = false; }
+        console.log("🎯 Drop target trovato:", dropTarget);
+        success = simulateDropOnElement(file, dropTarget);
+        await new Promise(r=>setTimeout(r, 500));
       }
 
-      // If drop failed, fallback to file input change (works with many emulators)
-      if(!dropped){
-        setStatus('Drop non rilevato, uso input file ...');
-        try{
-          setFileInput(file);
-          await new Promise(r=>setTimeout(r,300));
-        }catch(e){ console.warn(e); }
+      // Tentativo 2: File input
+      if(!success){
+        console.log("🔄 Tentativo con file input...");
+        setStatus('🎮 Caricamento ROM (file input)...');
+        setFileInput(file);
+        await new Promise(r=>setTimeout(r, 400));
       }
 
-      // If emulator shows a modal with "Load" button, try to click it
+      // Tentativo 3: Click su pulsanti Load
+      console.log("🔄 Ricerca pulsanti Load...");
       clickLoadButtons();
 
-      // hide UI again in case it reappeared
-      hideByKeywords(); hideLikelyModal();
+      // Pulizia UI finale
+      setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 500);
+      setTimeout(()=>{ hideByKeywords(); hideLikelyModal(); }, 1500);
 
-      setStatus('ROM inserita. Se non parte, verifica console per errori (CORS/Module).');
+      setStatus('✅ ROM inserita. Se non parte, controlla la console (F12).');
+      console.log("=== PLAYER READY ===");
 
-      // focus canvas to accept keyboard
+      // Focus canvas per tastiera
       try{ CANVAS.focus(); }catch(e){}
     }
 
-    // Start
-    main().catch(e=>{ console.error(e); setStatus('ERRORE: ' + (e.message||e)); });
-
-    // Public helper for debugging in console
-    window._play_debug = {
-      hideByKeywords, hideLikelyModal, clickLoadButtons, findDropTarget
-    };
+    // START
+    main().catch(e=>{ 
+      console.error("❌ Main error:", e); 
+      setStatus('❌ ERRORE: ' + (e.message||e)); 
+    });
 
   })();
   </script>
