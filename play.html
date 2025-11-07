@@ -1,500 +1,483 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Player — MorsEmulatores</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Player - SkyEmu</title>
+  <style>
+    :root{
+      --bg:#0f0f0f;
+      --panel:#141414;
+      --muted:#bdbdbd;
+      --accent:#00aaff;
+      --ui-size:14px;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:var(--muted);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
 
-<style>
-  :root{
-    --bg:#0a0b0e;
-    --panel:#0f1418;
-    --muted:#aebfcf;
-    --accent:#00aaff;
-    --radius:10px;
-  }
+    /* Top fixed bar that stays visible */
+    #topbar{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      height:56px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:8px 14px;
+      z-index:9999;
+      background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.25));
+      backdrop-filter: blur(4px);
+      box-shadow:0 1px 0 rgba(255,255,255,0.02) inset;
+    }
+    #back{
+      --size:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:var(--size);
+      height:var(--size);
+      border-radius:10px;
+      background:transparent;
+      color:var(--accent);
+      border:1px solid rgba(255,255,255,0.03);
+      cursor:pointer;
+      font-weight:600;
+    }
+    #titleBar{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
+      flex:1;
+      overflow:hidden;
+    }
+    #gameTitle{
+      font-size:16px;
+      font-weight:700;
+      color:#fff;
+      white-space:nowrap!important;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:70%;
+    }
+    #status{
+      font-size:12px;
+      color:var(--muted);
+      opacity:0.9;
+    }
 
-  html,body{ height:100%; margin:0; background:linear-gradient(180deg,#06060a,#0b1220); color:#eaf6ff; font-family:Inter,system-ui,Segoe UI,Roboto,Arial; -webkit-font-smoothing:antialiased; }
-  .page { display:flex; flex-direction:column; height:100vh; }
+    /* Canvas container - centered and responsive */
+    #playerWrap{
+      position:fixed;
+      top:64px;
+      bottom:24px;
+      left:0;
+      right:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      box-sizing:border-box;
+      overflow:auto;
+    }
+    canvas#canvas{
+      background:#111;
+      border-radius:8px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+      max-width:100%;
+      max-height:100%;
+      width: 800px;
+      height: 608px;
+      touch-action: none;
+      outline: none;
+      display:block;
+    }
 
-  /* top bar with small controls */
-  .topbar {
-    display:flex; align-items:center; gap:10px;
-    padding:8px 12px; background:rgba(0,0,0,0.45); backdrop-filter: blur(6px);
-    border-bottom:1px solid rgba(255,255,255,0.03);
-    z-index:60;
-  }
-  .topbar .left { display:flex; gap:8px; align-items:center; }
-  .topbar .title { font-weight:700; font-size:15px; margin-left:6px; }
-  .topbar .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+    /* Small bottom sticky controls (kept minimal) */
+    #bottomStub{
+      position:fixed;
+      bottom:12px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:9998;
+      pointer-events:none;
+    }
 
-  /* emulator area centered */
-  .emu-wrap {
-    position:relative;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex:1;
-    padding:12px;
-    box-sizing:border-box;
-  }
+    /* Responsive for small screens / TV */
+    @media (max-width:900px){
+      canvas#canvas{ width: 92vw; height: 70vh; }
+      #gameTitle{ max-width:50%; font-size:15px; }
+    }
+    @media (max-width:480px){
+      #topbar{ height:56px; padding:6px 8px;}
+      canvas#canvas{ width: 96vw; height: 60vh; border-radius:6px; }
+      #gameTitle{ max-width:60%; font-size:14px; }
+      #back{ width:40px; height:40px; border-radius:8px; }
+    }
 
-  /* we keep the canvas responsive */
-  #canvas {
-    width: min(980px, calc(100vw - 60px));
-    height: auto;
-    background:#000;
-    border-radius:10px;
-    box-shadow: 0 18px 60px rgba(0,0,0,0.65);
-    display:block;
-    outline: none;
-  }
-  /* If the emulator injects an internal wrapper, reduce padding */
-  #emuContainer { width:100%; display:flex; align-items:center; justify-content:center; }
+    /* quick helper for hidden elements we inject */
+    .hidden-by-playpage{ display:none !important; opacity:0 !important; height:0 !important; width:0 !important; }
 
-  /* bottom controls / library button */
-  .controls-bar {
-    display:flex; gap:12px; align-items:center; justify-content:space-between;
-    padding:10px 12px; background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.12));
-    border-top:1px solid rgba(255,255,255,0.02);
-  }
-
-  .btn {
-    background:linear-gradient(90deg,var(--accent),#006b9a);
-    color:#02121a; padding:10px 14px; border-radius:10px; font-weight:700; border:none; cursor:pointer;
-  }
-  .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); }
-
-  /* hide rules: try to hide emu UI elements injected by SkyEmu (heuristic) */
-  .hidden-by-playpage { display:none !important; }
-
-  /* library button small and fixed */
-  #libBtn {
-    position:fixed; right:14px; bottom:14px; z-index:200; border-radius:12px; padding:10px 12px;
-    box-shadow: 0 8px 26px rgba(0,0,0,0.6);
-    background: rgba(5,8,12,0.75); color:var(--muted); border:1px solid rgba(255,255,255,0.04);
-  }
-
-  /* responsive tweaks */
-  @media (max-width:720px){
-    #canvas { width: calc(100vw - 28px); }
-    .topbar .title { display:none; }
-  }
-</style>
+    /* style to hide SkyEmu common UI - can be extended */
+    #playpage-skyemu-hide-style { /* placeholder injected dynamically */ }
+  </style>
 </head>
 <body>
-  <div class="page">
-
-    <div class="topbar">
-      <div class="left">
-        <button id="menuHide" class="btn ghost" title="Mostra/nascondi menu">≡</button>
-        <div class="title" id="gameTitle">Caricamento…</div>
-      </div>
-
-      <div class="right">
-        <div id="statusText" style="color:var(--muted);font-size:13px;">Pronto</div>
-      </div>
+  <div id="topbar" role="banner" aria-hidden="false">
+    <button id="back" title="Torna alla Libreria" aria-label="Torna alla Libreria">←</button>
+    <div id="titleBar">
+      <div id="gameTitle">Caricamento...</div>
+      <div id="status">Preparazione...</div>
     </div>
-
-    <div class="emu-wrap">
-      <!-- container that SkyEmu will use (keeps things isolated) -->
-      <div id="emuContainer">
-        <!-- we provide the canvas with id=canvas because SkyEmu looks for it often -->
-        <canvas id="canvas"></canvas>
-      </div>
-    </div>
-
-    <div class="controls-bar">
-      <div style="display:flex; gap:10px; align-items:center;">
-        <div id="metaInfo" style="color:var(--muted); font-size:13px">Ready</div>
-      </div>
-
-      <div style="display:flex; gap:8px;">
-        <button id="btnRestart" class="btn ghost" title="Riavvia gioco">Riavvia</button>
-        <button id="btnPause" class="btn ghost" title="Pausa/Resume">⏸</button>
-      </div>
-    </div>
-
-    <button id="libBtn" title="Torna alla Libreria">← Libreria</button>
   </div>
 
-  <!-- hidden input that emulator expects (id matches many Emscripten builds) -->
-  <input id="fileInput0" type="file" style="display:none" />
+  <div id="playerWrap" role="main">
+    <canvas id="canvas" class="emscripten" tabindex="0"></canvas>
+  </div>
 
-  <!-- Load the SkyEmu core (CDN) -->
+  <div id="bottomStub" aria-hidden="true">
+    <!-- place for small badges/icons if desired -->
+  </div>
+
+  <!-- hidden file input used to feed the emulator -->
+  <input id="fileInput0" type="file" accept=".gba,.zip,.bin" style="display:none" />
+
+  <!-- Core emulator official -->
   <script src="https://web.skyemu.app/SkyEmu.js"></script>
 
-<script>
-/*
-  play.html
-  - Accepts ?url=... or ?id=... (searches games.json to resolve id)
-  - Downloads ROM and injects into hidden file input that emulator reads
-  - Attempts to hide emulator UI, branding and speed controls
-  - Forces focus to canvas to make keyboard work
-*/
+  <!-- Aggressive UI-hide & keyboard forwarding + ROM loader -->
+  <script>
+  (function(){
+    "use strict";
 
-"use strict";
+    /* ------------------ Utility & layout controls ------------------ */
+    const STATUS = document.getElementById('status');
+    const TITLE  = document.getElementById('gameTitle');
+    const BACK   = document.getElementById('back');
+    const CANVAS = document.getElementById('canvas');
+    const FILE_INPUT = document.getElementById('fileInput0');
 
-const params = new URLSearchParams(location.search);
-const rawUrlParam = params.get("url");
-const idParam = params.get("id");
-const titleParam = params.get("title");
-
-const config = {
-  gamesJson: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
-  // Se vuoi forzare un'immagine di sfondo del player (logo), impostala qui:
-  // playerLogo: "https://example.com/your-player-image.png"
-};
-
-// helpers
-const $ = sel => document.querySelector(sel);
-const el = id => document.getElementById(id);
-const statusText = el("statusText");
-const gameTitleEl = el("gameTitle");
-const metaInfo = el("metaInfo");
-const libBtn = el("libBtn");
-const canvas = el("canvas");
-const fileInput = el("fileInput0");
-
-let ModuleWaitResolve;
-function waitForModule(timeout = 10000){
-  if(window.Module && (window.Module.onRuntimeInitialized || window.Module.calledRun !== undefined)) return Promise.resolve(window.Module);
-  return new Promise((resolve) => {
-    ModuleWaitResolve = resolve;
-    const start = Date.now();
-    const iv = setInterval(() => {
-      if(window.Module && (window.Module.onRuntimeInitialized || window.Module.calledRun !== undefined)){
-        clearInterval(iv);
-        resolve(window.Module);
-      }
-      if(Date.now() - start > timeout){
-        clearInterval(iv);
-        resolve(window.Module || null);
-      }
-    }, 100);
-  });
-}
-
-/* ---- fetch games.json if id param was used ---- */
-async function resolveUrlFromId(id){
-  if(!id) return null;
-  try{
-    const r = await fetch(config.gamesJson);
-    if(!r.ok) return null;
-    const list = await r.json();
-    const found = list.find(g => g.id === id || g.id === decodeURIComponent(id));
-    if(found) return found.url || null;
-    return null;
-  }catch(e){
-    console.warn("games.json fetch error", e);
-    return null;
-  }
-}
-
-/* ---- download ROM with progress ---- */
-async function downloadRom(url){
-  setStatus("Scaricamento ROM...");
-  try{
-    const resp = await fetch(url, { mode: "cors" });
-    if(!resp.ok) throw new Error("HTTP " + resp.status);
-    const contentLength = resp.headers.get("Content-Length");
-    const total = contentLength ? parseInt(contentLength, 10) : null;
-    const reader = resp.body ? resp.body.getReader() : null;
-    if(!reader){
-      const ab = await resp.arrayBuffer();
-      setStatus("Scaricamento completato");
-      return new Uint8Array(ab);
-    }
-    const chunks = [];
-    let received = 0;
-    while(true){
-      const {done, value} = await reader.read();
-      if(done) break;
-      chunks.push(value);
-      received += value.length;
-      if(total){
-        setStatus(`Scaricamento: ${(received/total*100).toFixed(0)}%`);
-      } else {
-        setStatus(`Scaricamento: ${(received/1024).toFixed(0)} KB`);
-      }
-    }
-    // concat
-    const out = new Uint8Array(received);
-    let offset = 0;
-    for(const c of chunks){
-      out.set(c, offset);
-      offset += c.length;
-    }
-    setStatus("Scaricamento completato");
-    return out;
-  }catch(err){
-    console.error("downloadRom error", err);
-    throw err;
-  }
-}
-
-/* ---- set the hidden file input so the emulator thinks user selected a file ---- */
-function setFileInputFromUint8(arr, filename){
-  const blob = new Blob([arr], { type: "application/octet-stream" });
-  const file = new File([blob], filename || "game.gba", { type: blob.type });
-  const dt = new DataTransfer();
-  dt.items.add(file);
-  fileInput.files = dt.files;
-  // trigger change - many emulators hook this input
-  fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-/* ---- try to hide/hard-remove UI elements SkyEmu injects ---- */
-function removeEmuUiHeuristics(){
-  // candidate class/name substrings to hide (tweak if needed)
-  const selectorsByClass = [
-    '[class*="sky"]', '[class*="emu"]', '[class*="overlay"]',
-    '[class*="toolbar"]', '[class*="control"]', '[id*="sky"]',
-    '[id*="emu"]', '[id*="toolbar"]'
-  ];
-  // hide by searching textual labels that usually appear in UI
-  const textPatterns = [
-    /skyemu/i, /speed/i, /pause/i, /save/i, /load/i, /volume/i, /zoom/i, /fps/i
-  ];
-
-  // 1) Hide obvious candidate classes (gentle)
-  selectorsByClass.forEach(sel => {
-    document.querySelectorAll(sel).forEach(e => {
-      // don't hide our own controls
-      if(e.closest("#emuContainer") || e === fileInput || e === canvas) return;
-      e.classList.add("hidden-by-playpage");
+    BACK.addEventListener('click', ()=>{
+      if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+      // go back to index
+      window.location.href = "index.html";
     });
-  });
 
-  // 2) scan all nodes and hide ones containing certain text (branding/labels)
-  const all = Array.from(document.body.querySelectorAll("*"));
-  for(const node of all){
-    try{
-      if(node === document.body || node === document.documentElement) continue;
-      if(node === canvas || node === fileInput || node.id === "emuContainer") continue;
-      const txt = (node.innerText || "").trim();
-      if(!txt) continue;
-      for(const re of textPatterns){
-        if(re.test(txt)){
-          node.classList.add("hidden-by-playpage");
-          break;
+    function setStatus(msg){
+      STATUS.textContent = msg;
+      console.log("[STATUS] " + msg);
+    }
+    function setTitle(txt){
+      TITLE.textContent = txt || "";
+      TITLE.title = txt || "";
+    }
+
+    /* ------------------ Wait for Module (SkyEmu runtime) ------------------ */
+    function waitForModule(timeout = 8000){
+      return new Promise((resolve)=>{
+        if(window.Module) return resolve(window.Module);
+        const start = Date.now();
+        const iv = setInterval(()=>{
+          if(window.Module){
+            clearInterval(iv);
+            resolve(window.Module);
+          }
+          if(Date.now() - start > timeout){
+            clearInterval(iv);
+            resolve(null);
+          }
+        }, 100);
+      });
+    }
+
+    /* ------------------ DOM / UI cleanup (non-destructive) ------------------ */
+    const hideTextPatterns = [/skyemu/i, /speed/i, /pause/i, /fps/i, /volume/i, /save/i, /load/i];
+    const hideClassCandidates = ['skyemu','sky-ui','emu','toolbar','controls','panel','overlay','speed','menu','branding'];
+
+    // strong css injection for heuristic hiding
+    const cssHide = `
+      /* aggressive helper rules (safe: highest specificity is our appended style) */
+      [class*="sky"], [id*="sky"], [class*="emu"], [id*="emu"], [class*="toolbar"], [class*="control"], [class*="speed"], [id*="branding"], .sky-branding { display:none !important; }
+      .hidden-by-playpage{ display:none !important; opacity:0 !important; height:0 !important; width:0 !important; }
+    `;
+    const styleEl = document.createElement('style');
+    styleEl.id = 'playpage-skyemu-hide-style';
+    styleEl.appendChild(document.createTextNode(cssHide));
+    document.head.appendChild(styleEl);
+
+    function hideNodesByText(root=document.body){
+      const nodes = Array.from(root.querySelectorAll('*'));
+      nodes.forEach(n=>{
+        try{
+          if(n === document.body || n === document.documentElement) return;
+          if(n.id && /back|topbar|titleBar|status|canvas|playerWrap|fileInput0/i.test(n.id)) return;
+          const txt = (n.innerText||'').trim();
+          if(!txt) return;
+          for(const re of hideTextPatterns){
+            if(re.test(txt)){
+              n.classList.add('hidden-by-playpage');
+              n.style.display = 'none';
+              break;
+            }
+          }
+        }catch(e){}
+      });
+    }
+
+    const mo = new MutationObserver(muts=>{
+      muts.forEach(m=>{
+        if(m.addedNodes && m.addedNodes.length){
+          m.addedNodes.forEach(node=>{
+            try{
+              if(node.nodeType===1){
+                const cls = ((node.className||'') + ' ' + (node.id||'')).toLowerCase();
+                for(const c of hideClassCandidates){
+                  if(cls.includes(c.toLowerCase())){
+                    node.classList.add('hidden-by-playpage');
+                    node.style.display = 'none';
+                  }
+                }
+                const txt = (node.innerText||'').trim();
+                if(txt){
+                  for(const re of hideTextPatterns){
+                    if(re.test(txt)){
+                      node.classList.add('hidden-by-playpage');
+                      node.style.display = 'none';
+                      break;
+                    }
+                  }
+                }
+              }
+            }catch(e){}
+          });
+        }
+      });
+    });
+    mo.observe(document.body,{childList:true,subtree:true});
+
+    function aggressiveCleanup(){
+      try{
+        hideNodesByText(document.body);
+        // hide any element whose exact innerText is "SkyEmu"
+        document.querySelectorAll('div,span,button').forEach(n=>{
+          try{
+            if((n.innerText||'').trim() === 'SkyEmu'){ n.classList.add('hidden-by-playpage'); n.style.display='none'; }
+          }catch(e){}
+        });
+        // remove title attributes containing skyemu
+        document.querySelectorAll('[title],[aria-label]').forEach(n=>{
+          try{
+            const tit = (n.getAttribute('title')||'') + ' ' + (n.getAttribute('aria-label')||'');
+            if(/skyemu/i.test(tit)){ n.classList.add('hidden-by-playpage'); n.style.display='none'; }
+          }catch(e){}
+        });
+      }catch(e){ console.warn('cleanup err', e); }
+    }
+    // run multiple times to catch late injected UI
+    aggressiveCleanup();
+    setTimeout(aggressiveCleanup, 700);
+    setTimeout(aggressiveCleanup, 2000);
+
+    // Expose a manual helper
+    window.removeSkyUI = function(){ aggressiveCleanup(); console.log('removeSkyUI'); };
+
+    /* ------------------ Keyboard forwarding to canvas ------------------ */
+    (function setupKeyboardForwarding(){
+      try{
+        CANVAS.tabIndex = 0;
+        CANVAS.setAttribute('tabindex','0');
+        CANVAS.style.outline='none';
+        CANVAS.addEventListener('mousedown', ()=> CANVAS.focus());
+        // Forward keyboard events to canvas so emu receives them
+        window.addEventListener('keydown', ev=>{
+          // allow browser shortcuts (ctrl, meta) - don't swallow them
+          if(ev.ctrlKey || ev.metaKey) return;
+          // create a composed KeyboardEvent and dispatch on canvas
+          try{
+            const evt = new KeyboardEvent('keydown', {
+              key: ev.key,
+              code: ev.code,
+              keyCode: ev.keyCode,
+              bubbles: true,
+              cancelable: true,
+              shiftKey: ev.shiftKey,
+              altKey: ev.altKey,
+              ctrlKey: ev.ctrlKey,
+              metaKey: ev.metaKey,
+            });
+            CANVAS.dispatchEvent(evt);
+          }catch(e){}
+        }, {passive:true});
+        window.addEventListener('keyup', ev=>{
+          if(ev.ctrlKey || ev.metaKey) return;
+          try{
+            const evt = new KeyboardEvent('keyup', {
+              key: ev.key,
+              code: ev.code,
+              keyCode: ev.keyCode,
+              bubbles:true,
+              cancelable:true
+            });
+            CANVAS.dispatchEvent(evt);
+          }catch(e){}
+        }, {passive:true});
+      }catch(e){}
+    })();
+
+    /* ------------------ ROM downloading + injection ------------------ */
+    // If the ROM is on GitHub raw and CORS blocks, the user must serve from a CORS-enabled host (jsDelivr, catbox, etc).
+    // We attempt a normal fetch and report errors to the UI.
+
+    async function fetchArrayBufferWithProgress(url, onProgress){
+      // We'll try a standard fetch with CORS mode
+      const r = await fetch(url, { mode: 'cors' });
+      if(!r.ok) throw new Error("HTTP " + r.status + " " + r.statusText);
+      const contentLength = r.headers.get('Content-Length');
+      if(!r.body) {
+        // no streaming available
+        const buf = await r.arrayBuffer();
+        onProgress && onProgress(buf.byteLength, buf.byteLength);
+        return buf;
+      }
+
+      const total = contentLength ? parseInt(contentLength) : undefined;
+      const reader = r.body.getReader();
+      let received = 0;
+      const chunks = [];
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        chunks.push(value);
+        received += value.length;
+        onProgress && onProgress(received, total);
+      }
+      // concatenate
+      const tmp = new Uint8Array(received);
+      let offset = 0;
+      for(const c of chunks){
+        tmp.set(c, offset);
+        offset += c.length;
+      }
+      return tmp.buffer;
+    }
+
+    function setFileInputFromBuffer(buffer, filename){
+      const blob = new Blob([buffer], { type: 'application/octet-stream' });
+      const file = new File([blob], filename, { type: 'application/octet-stream' });
+      // set into the file input via DataTransfer
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      FILE_INPUT.files = dt.files;
+      // dispatch change - SkyEmu listens to file input change to load ROM
+      FILE_INPUT.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    async function launchROMByUrl(url, displayName){
+      try{
+        setTitle(displayName || url.split('/').pop());
+        setStatus("Scaricamento " + (displayName||"ROM") + "...");
+        const buf = await fetchArrayBufferWithProgress(url, (rec, tot)=>{
+          if(tot) setStatus(`Scaricato ${Math.round(rec/1024)} KB / ${Math.round(tot/1024)} KB`);
+          else setStatus(`Scaricato ${Math.round(rec/1024)} KB`);
+        });
+        const filename = decodeURIComponent((new URL(url)).pathname.split('/').pop() || 'game.gba');
+        setStatus("Preparazione file...");
+        setFileInputFromBuffer(buf, filename);
+        setStatus("ROM pronta. Avvio emulatore...");
+        // hide any status overlay after short delay
+        setTimeout(()=>{ STATUS.style.display='none'; }, 800);
+        // focus canvas
+        try{ CANVAS.focus(); }catch(e){}
+      }catch(err){
+        console.error(err);
+        setStatus("ERRORE: " + (err.message||err));
+        // show a helpful hint about CORS if fetch failed
+        if(err.message && err.message.toLowerCase().includes('failed to fetch')){
+          setStatus("ERRORE: impossibile scaricare (controlla CORS). Usa link con CORS abilitato (catbox/jsdelivr/own host).");
         }
       }
-    }catch(e){}
-  }
+    }
 
-  // 3) specifically remove elements with aria-labels or title containing "Sky" "Emu"
-  document.querySelectorAll("[aria-label],[title]").forEach(e=>{
-    try{
-      const t = (e.getAttribute("aria-label") || e.getAttribute("title") || "");
-      if(/skyemu|sky emu|sky/i.test(t)) e.classList.add("hidden-by-playpage");
-    }catch(e){}
-  });
+    /* ------------------ Entry: parse params and start ------------------ */
+    async function mainEntry(){
+      setStatus("Preparazione...");
+      const params = new URLSearchParams(location.search);
+      const romParam = params.get('rom');
+      const idParam  = params.get('id');
 
-  // 4) try to remove the branding area if present: elements with exact 'SkyEmu' text
-  document.querySelectorAll("div,span").forEach(n=>{
-    if((n.innerText||"").trim() === "SkyEmu") n.classList.add("hidden-by-playpage");
-  });
-}
-
-/* ---- ensure keyboard events reach the canvas ---- */
-function enableKeyboardForwarding(){
-  try{
-    // make canvas focusable
-    canvas.tabIndex = 0;
-    canvas.setAttribute("tabindex","0");
-    canvas.style.outline = "none";
-
-    // auto focus
-    setTimeout(()=>canvas.focus(), 200);
-
-    // forward key events: some emulators listen on the canvas, some on Module. We'll dispatch to canvas.
-    window.addEventListener("keydown", (ev) => {
-      // don't steal ctrl/cmd+... combinations
-      if(ev.ctrlKey || ev.metaKey) return;
-      // keep behavior for normal keys
-      try{
-        // Fire a new KeyboardEvent on the canvas
-        const ke = new KeyboardEvent("keydown", {
-          key: ev.key, code: ev.code, keyCode: ev.keyCode, which: ev.which,
-          altKey: ev.altKey, ctrlKey: ev.ctrlKey, shiftKey: ev.shiftKey, metaKey: ev.metaKey,
-          bubbles: true, cancelable: true
-        });
-        canvas.dispatchEvent(ke);
-      }catch(e){}
-    }, {passive:false});
-
-    window.addEventListener("keyup", (ev) => {
-      if(ev.ctrlKey || ev.metaKey) return;
-      try{
-        const ke = new KeyboardEvent("keyup", {
-          key: ev.key, code: ev.code, keyCode: ev.keyCode, which: ev.which,
-          altKey: ev.altKey, ctrlKey: ev.ctrlKey, shiftKey: ev.shiftKey, metaKey: ev.metaKey,
-          bubbles: true, cancelable: true
-        });
-        canvas.dispatchEvent(ke);
-      }catch(e){}
-    }, {passive:false});
-
-    // ensure clicking the canvas focuses it
-    canvas.addEventListener("mousedown", ()=> setTimeout(()=>canvas.focus(),10));
-  }catch(e){
-    console.warn("enableKeyboardForwarding failed", e);
-  }
-}
-
-/* ---- remove skyemu branding by altering Module if possible ----
-   Some Emscripten apps expose Module['print'] or UI config; this is highly app-specific.
-   We attempt to override common items: Module['title'] etc. */
-function tweakModuleIfPossible(mod){
-  try{
-    // Some builds display Module['title'] or Module['canvas'] label - clear them
-    if(mod){
-      if(mod.title) mod.title = "";
-      if(mod.print) {
-        // keep console logging but avoid printing to on-screen UI if present
+      // wait for Module (SkyEmu runtime) to be defined before downloading so that loaded ROM is processed properly.
+      const mod = await waitForModule(12000); // wait up to 12s
+      if(!mod){
+        setStatus("Attenzione: runtime non trovato. Carica la pagina correttamente.");
+        // still proceed: we'll try to fetch ROM but emulator may load later
+      } else {
+        // if Module has print/printErr, override them to avoid on-screen logs (we log to console)
+        try{
+          if(mod.print) mod.print = function(...a){ console.log('[Module.print]', ...a); };
+          if(mod.printErr) mod.printErr = function(...a){ console.error('[Module.printErr]', ...a); };
+        }catch(e){}
       }
+
+      // if 'id' provided, try to fetch games.json and map to url
+      let romUrl = null;
+      let title = null;
+      if(idParam){
+        setStatus("Caricamento games.json per trovare l'id: " + idParam);
+        try{
+          // attempt to fetch games.json relative to site root
+          const gamesUrl = (new URL('games.json', location.href)).toString();
+          const resp = await fetch(gamesUrl, { mode: 'cors' });
+          if(!resp.ok) throw new Error("games.json HTTP " + resp.status);
+          const list = await resp.json();
+          const entry = Array.isArray(list) ? list.find(e=>e.id===idParam) : (list[idParam] || null);
+          if(!entry){
+            setStatus("ERRORE: id non trovato in games.json");
+            console.warn("games.json entries", list);
+            return;
+          }
+          romUrl = entry.url;
+          title = entry.name || entry.title || idParam;
+        }catch(e){
+          console.error(e);
+          setStatus("ERRORE caricamento games.json: " + (e.message||e));
+          return;
+        }
+      } else if(romParam){
+        // direct rom link
+        romUrl = decodeURIComponent(romParam);
+      } else {
+        setStatus("Nessun ROM specificato. Usa ?rom=URL o ?id=game_id");
+        return;
+      }
+
+      // If URL is on github raw and you prefer jsDelivr conversion, a simple transform:
+      // e.g. https://github.com/user/repo/raw/branch/path/file.gba -> https://cdn.jsdelivr.net/gh/user/repo@branch/path/file.gba
+      // but do not auto-rewrite here; let user supply CDN link if CORS issues persist.
+      setTitle(title || (romUrl ? romUrl.split('/').pop() : 'ROM'));
+      setStatus("Download ROM da: " + romUrl);
+
+      // finally download + inject
+      await launchROMByUrl(romUrl, title);
     }
-  }catch(e){}
-}
 
-/* ---- UI helpers ---- */
-function setStatus(s){
-  statusText.textContent = s;
-  console.log("[play] " + s);
-}
-function setMeta(s){ metaInfo.textContent = s; }
+    // start main
+    mainEntry();
 
-libBtn.addEventListener("click", ()=> {
-  // back to the library (index)
-  window.location.href = "index.html";
-});
+    // Expose function to programmatically load a rom url
+    window.playload = function(url, name){
+      launchROMByUrl(url, name);
+    };
 
-el("btnRestart").addEventListener("click", ()=> {
-  // best-effort: if emulator exposes reload/restart API try it; otherwise reload page
-  try{
-    if(window.Module && window.Module.restartGame) {
-      window.Module.restartGame();
-      setStatus("Riavvio emulator...");
-      return;
-    }
-  }catch(e){}
-  window.location.reload();
-});
-el("btnPause").addEventListener("click", ()=> {
-  try{
-    // many emulators expose Module['pauseMainLoop'] / resume
-    if(window.Module && window.Module.pauseMainLoop) {
-      window.Module.pauseMainLoop();
-      setStatus("Pausa emulatore");
-      return;
-    }
-  }catch(e){}
-  setStatus("Pause non supportata direttamente");
-});
-
-/* ---- main bootstrap ---- */
-(async function main(){
-  setStatus("Preparazione...");
-
-  // determine ROM URL
-  let romUrl = null;
-  if(rawUrlParam){
-    romUrl = decodeURIComponent(rawUrlParam);
-    gameTitleEl.textContent = titleParam ? decodeURIComponent(titleParam) : romUrl.split("/").pop();
-  } else if(idParam){
-    setStatus("Risolvo id dal games.json...");
-    const resolved = await resolveUrlFromId(decodeURIComponent(idParam));
-    if(resolved){
-      romUrl = resolved;
-      gameTitleEl.textContent = titleParam || decodeURIComponent(idParam);
-    } else {
-      setStatus("ERRORE: id non trovato in games.json");
-      alert("Impossibile risolvere l'id dal games.json");
-      return;
-    }
-  } else {
-    setStatus("Nessun parametro url/id fornito");
-    alert("Specifica ?url= oppure ?id= nel link.");
-    return;
-  }
-
-  if(!romUrl){
-    setStatus("URL ROM non valido");
-    return;
-  }
-
-  setMeta("ROM: " + romUrl);
-
-  // Wait for Module to be available (SkyEmu)
-  setStatus("Inizializzo emulatore...");
-  const Module = await waitForModule(15000);
-  if(!Module){
-    setStatus("Modulo emulatore non trovato o timeout");
-    // Try to continue anyway — sometimes SkyEmu attaches later
-  } else {
-    // Apply small tweaks if emulator provides API
-    try { tweakModuleIfPossible(Module); } catch(e){}
-  }
-
-  // Download ROM (catch CORS problems)
-  let romData = null;
-  try{
-    romData = await downloadRom(romUrl);
-  }catch(err){
-    // Provide helpful message: CORS likely
-    setStatus("ERRORE: Impossibile scaricare (CORS?)");
-    console.error(err);
-    alert("Errore nel download: probabilmente CORS. Prova a usare un CDN / jsDelivr o carica la ROM su un host con Access-Control-Allow-Origin impostato.");
-    return;
-  }
-
-  // Inject file into file input for emulator
-  try{
-    const filename = (new URL(romUrl.split("?")[0], location.href).pathname.split("/").pop()) || "game.gba";
-    setFileInputFromUint8(romData, filename);
-    setStatus("ROM caricata: " + filename);
-  }catch(e){
-    console.error("setFileInputFromUint8 failed", e);
-    setStatus("Errore durante l'iniezione della ROM");
-  }
-
-  // Wait a short moment then try to hide UI and focus canvas
-  setTimeout(()=>{
-    removeEmuUiHeuristics();
-    enableKeyboardForwarding();
-    setTimeout(()=>{ removeEmuUiHeuristics(); }, 500);
-    setStatus("Gioco avviato — premi i tasti");
-    // ensure canvas focused
-    try{ canvas.focus(); }catch(e){}
-  }, 800);
-
-  // Also hide UI again once Module runtime is ready (some UI elements injected later)
-  if(window.Module){
-    const onReady = window.Module.onRuntimeInitialized || window.Module.postRun;
-    if(typeof window.Module.onRuntimeInitialized === "function"){
-      const prev = window.Module.onRuntimeInitialized;
-      window.Module.onRuntimeInitialized = function(){
-        try{ removeEmuUiHeuristics(); enableKeyboardForwarding(); tweakModuleIfPossible(window.Module); }catch(e){}
-        prev();
-      };
-    } else {
-      try{ removeEmuUiHeuristics(); }catch(e){}
-    }
-  }
-
-})(); // end main
-
-/* debugging: quick function to add more selectors if needed */
-function hideSelectors(list){
-  list.forEach(sel => {
-    document.querySelectorAll(sel).forEach(n=>n.classList.add("hidden-by-playpage"));
-  });
-}
-// Example: hideSelectors(['.top-controls','.speed','[data-skyui]']);
-// Se qualche elemento resta visibile, ispezionalo e aggiungi qui il suo selettore
-
-</script>
-
+  })();
+  </script>
 </body>
 </html>
