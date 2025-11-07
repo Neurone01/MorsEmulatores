@@ -18,6 +18,7 @@
       --shadow: 0 6px 18px rgba(0,0,0,0.6);
       --touch-size:52px;
       --max-width:1300px;
+      --header-height:84px;
     }
 
     html,body{
@@ -31,18 +32,29 @@
       scroll-behavior:smooth;
     }
 
+    /* container */
     .wrap{
       max-width:var(--max-width);
       margin:0 auto;
       padding:18px;
+      padding-top: 8px;
     }
 
+    /* sticky header so search always visible */
     header{
       display:flex;
       gap:16px;
       align-items:center;
       justify-content:space-between;
       margin-bottom:14px;
+      position: sticky;
+      top: 0;
+      z-index: 120;
+      background: linear-gradient(180deg, rgba(5,6,10,0.85), rgba(5,6,10,0.6));
+      backdrop-filter: blur(6px);
+      padding:12px 14px;
+      border-radius:12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
     }
 
     .brand{
@@ -103,7 +115,7 @@
     .chip.primary{ background:linear-gradient(90deg,var(--accent),#006bb3); color:#02121a; font-weight:600; border: 0; }
 
     /* grid */
-    main{ display:grid; gap:var(--gap); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items:start; }
+    main{ display:grid; gap:var(--gap); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items:start; padding-top:10px;}
     @media(min-width:900px){ main{ grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); } }
     @media(min-width:1400px){ main{ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
 
@@ -139,6 +151,7 @@
       color:#f1f8ff;
       margin:0;
       word-break:break-word; /* allows wrapping anywhere if needed */
+      white-space: normal; /* ensure wrap */
     }
 
     .meta{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:auto; }
@@ -210,7 +223,7 @@
 
     /* responsive touches for mobile/TV */
     @media (max-width:520px){
-      header{ flex-direction:column; align-items:stretch; gap:12px; }
+      header{ flex-direction:column; align-items:stretch; gap:12px; padding:10px; border-radius:10px; }
       .brand p{ display:none; }
       .searchbar{ margin-left:0; }
       .thumb{ height:88px; }
@@ -258,7 +271,7 @@
 <script>
 "use strict";
 
-/* ---------- config (stesso del precedente) ---------- */
+/* ---------- config ---------- */
 const config = {
   gamesJsonUrl: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
   githubRepos: [
@@ -414,7 +427,7 @@ function cardHtml(game){
   const system = (game.system || "gba").toLowerCase();
   const logo = config.logos[system] || config.logos.gba;
   const tags = (game.tags || []);
-  // NOTE: removed display of game.source on purpose (user requested)
+  // Download button REMOVED by request
   return `
     <article class="card" data-id="${escapeHtml(game.id)}" data-system="${escapeHtml(system)}" data-title="${escapeHtml(title.toLowerCase())}">
       <div class="thumb" aria-hidden="true">
@@ -430,7 +443,6 @@ function cardHtml(game){
         <div class="badge" aria-hidden="true">${system.toUpperCase()}</div>
         <div style="display:flex;gap:8px">
           <button class="btn" onclick="launchGame('${encodeURIComponent(game.id)}')" title="Gioca ${escapeHtml(title)}">Play ▶</button>
-          <a class="btn ghost" href="${game.url ? escapeHtml(game.url) : '#'}" target="_blank" rel="noopener" title="Scarica ROM">Download</a>
         </div>
       </div>
     </article>
@@ -439,7 +451,6 @@ function cardHtml(game){
 
 function renderList(list){
   DOM.grid.innerHTML = list.map(cardHtml).join("\n");
-  // attach keyboard-friendly behavior: open on Enter for focused card
   document.querySelectorAll(".card").forEach(card => {
     card.tabIndex = 0;
     card.onkeydown = (e) => {
@@ -525,7 +536,6 @@ window.addEventListener("scroll", handleScrollForTopBtn);
   setFooter("Inizializzazione…");
   await loadAllGames();
   applyFiltersAndRender();
-  // show top button appropriately
   handleScrollForTopBtn();
 })();
 </script>
