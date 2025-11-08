@@ -1,10 +1,9 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>MorsEmulatores — Libreria</title>
-
   <style>
     :root {
       --bg:#05060a;
@@ -12,184 +11,163 @@
       --muted:#9fb0c0;
       --accent:#00aaff;
       --accent-2:#00ffd1;
+      --gap:14px;
       --radius:12px;
       --shadow:0 6px 18px rgba(0,0,0,0.6);
-      --max-width:1300px;
     }
 
-    body {
+    html,body {
+      height:100%;
       margin:0;
-      font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
       background:linear-gradient(180deg,#04050a 0%, #071025 100%);
       color:#e6f0f6;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      scroll-behavior:smooth;
     }
 
     .wrap {
-      max-width:var(--max-width);
-      margin:auto;
+      max-width:1300px;
+      margin:0 auto;
       padding:18px;
     }
 
     header {
-      display:flex;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:16px;
-      background:rgba(10,12,18,0.75);
-      backdrop-filter:blur(8px);
-      border-radius:var(--radius);
-      padding:12px 16px;
-      box-shadow:var(--shadow);
       position:sticky;
       top:0;
-      z-index:50;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:10px 14px;
+      border-radius:12px;
+      background:linear-gradient(180deg,rgba(5,6,10,0.85),rgba(5,6,10,0.6));
+      backdrop-filter:blur(8px);
+      box-shadow:var(--shadow);
     }
 
-    .brand { display:flex; align-items:center; gap:10px; }
-    .brand div:first-child {
-      width:44px; height:44px;
-      display:flex; align-items:center; justify-content:center;
-      border-radius:10px;
-      background:linear-gradient(90deg,#001b2b,#003d52);
-      font-weight:800; color:var(--accent);
+    .brand {
+      display:flex;
+      gap:10px;
+      align-items:center;
     }
-    .brand h1 { font-size:18px; margin:0; }
-    .brand p { margin:0; font-size:12px; color:var(--muted); }
+
+    .brand h1 { margin:0; font-size:18px; }
+    .brand p { margin:0; color:var(--muted); font-size:12px; }
+
+    .searchbar {
+      flex:1;
+      position:relative;
+    }
 
     .searchbar input {
       width:100%;
       padding:12px 14px;
-      border-radius:10px;
+      border-radius:12px;
       border:0;
-      background:rgba(255,255,255,0.04);
+      background:rgba(255,255,255,0.05);
       color:inherit;
-      font-size:15px;
       outline:none;
+      font-size:15px;
       box-shadow:var(--shadow);
     }
-
-    .controls {
-      display:flex; align-items:center; gap:10px;
-    }
-    .chip {
-      background:rgba(255,255,255,0.05);
-      padding:8px 12px;
-      border-radius:999px;
-      color:var(--muted);
-      cursor:pointer;
-      border:1px solid rgba(255,255,255,0.05);
-      transition:all .18s ease;
-    }
-    .chip:hover { background:rgba(255,255,255,0.08); }
-    .chip:active { transform:scale(.97); }
 
     main {
       display:grid;
-      gap:16px;
-      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-      align-items:start;
+      gap:var(--gap);
+      grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+      margin-top:14px;
     }
 
     .card {
-      background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.1));
+      background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);
       border-radius:var(--radius);
       padding:12px;
+      display:flex;
+      flex-direction:column;
       box-shadow:var(--shadow);
-      display:flex; flex-direction:column;
-      gap:10px;
-      transition:transform .2s ease, box-shadow .2s ease;
+      transition:transform .18s ease;
     }
-    .card:hover { transform:translateY(-5px); box-shadow:0 14px 30px rgba(0,0,0,0.7); }
+
+    .card:hover { transform:translateY(-5px); }
 
     .thumb {
       height:100px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       border-radius:10px;
-      display:flex; align-items:center; justify-content:center;
-      background:rgba(255,255,255,0.02);
+      background:rgba(255,255,255,0.04);
       overflow:hidden;
+      margin-bottom:10px;
     }
-    .thumb img { max-width:100%; max-height:100%; }
 
-    .title { font-size:15px; font-weight:700; color:#f1f8ff; margin:0; }
-    .tags { display:flex; gap:6px; flex-wrap:wrap; }
-    .tag { font-size:12px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:8px; color:var(--muted); }
+    .thumb img {
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6));
+    }
 
-    .badge { font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,0.25); color:var(--accent); font-weight:700; }
+    .title { font-size:15px; font-weight:700; margin-bottom:8px; }
 
-    .card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:auto; }
+    .badge {
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(0,0,0,0.25);
+      color:var(--accent);
+      border:1px solid rgba(0,170,255,0.1);
+      font-weight:700;
+    }
 
     .btn {
+      display:inline-block;
       background:linear-gradient(90deg,var(--accent),#007bbd);
       color:#02121a;
       padding:10px 14px;
       border-radius:10px;
       font-weight:700;
-      border:0;
-      cursor:pointer;
-      box-shadow:0 8px 20px rgba(0,0,0,0.45);
-    }
-    .btn:hover { transform:translateY(-1px); }
-    .btn:active { transform:translateY(1px); }
-
-    #topBtn {
-      position:fixed; right:20px; bottom:20px;
-      width:56px; height:56px;
-      border-radius:50%;
-      background:linear-gradient(180deg,#00b3ff,#006bb3);
-      color:white;
-      display:flex; align-items:center; justify-content:center;
-      font-size:22px; border:0;
-      box-shadow:0 12px 30px rgba(0,0,0,0.6);
-      opacity:0; transform:translateY(10px);
-      transition:all .26s ease;
-      cursor:pointer;
-    }
-    #topBtn.show { opacity:1; transform:translateY(0); }
-
-    footer {
-      margin-top:20px;
-      color:var(--muted);
+      text-decoration:none;
+      margin-top:auto;
       text-align:center;
-      font-size:13px;
-      padding-bottom:32px;
     }
+
+    footer { text-align:center; color:var(--muted); margin-top:20px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div>EM</div>
-        <div>
-          <h1>MorsEmulatores</h1>
-          <p>Libreria giochi GBA / GBC / GB</p>
-        </div>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div style="width:44px;height:44px;border-radius:9px;background:linear-gradient(90deg,#001b2b,#003d52);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);">
+        EM
       </div>
-
-      <div style="flex:1; display:flex; align-items:center; gap:12px;">
-        <div class="searchbar" style="flex:1;">
-          <input id="searchInput" placeholder="Cerca titolo, piattaforma, tag…" aria-label="Cerca giochi" />
-        </div>
-        <div class="controls">
-          <div class="chip" id="filterPlatform">Tutti</div>
-        </div>
+      <div>
+        <h1>MorsEmulatores</h1>
+        <p>GBA / GBC / GB — Libreria giochi</p>
       </div>
-    </header>
+    </div>
 
-    <main id="gameGrid" aria-live="polite"></main>
-    <footer id="footer">Caricamento giochi…</footer>
-  </div>
+    <div class="searchbar">
+      <input id="searchInput" placeholder="Cerca titolo o piattaforma..." aria-label="Cerca giochi">
+    </div>
 
-  <button id="topBtn" aria-label="Torna su" title="Torna su">↑</button>
+    <div>
+      <button id="filterPlatform" style="background:rgba(255,255,255,0.08);border:0;padding:10px 12px;border-radius:8px;color:#9fb0c0;cursor:pointer;">
+        Tutti
+      </button>
+    </div>
+  </header>
+
+  <main id="gameGrid"></main>
+
+  <footer id="footer">Caricamento giochi…</footer>
+</div>
 
 <script>
 "use strict";
 
+/* --- CONFIG --- */
 const config = {
   gamesJsonUrl: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
   githubRepos: [
@@ -200,117 +178,111 @@ const config = {
     gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
     gb:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
     gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
-  },
-  europeRegex: /\b(Europe|EUR)\b/i
+  }
 };
 
+/* BIOS links */
+const biosLinks = {
+  gba: ["https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin"],
+  gbc: ["https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin"],
+  gb: [
+    "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gb_bios.bin",
+    "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
+  ]
+};
+
+/* --- DOM --- */
 const DOM = {
   grid: document.getElementById("gameGrid"),
   footer: document.getElementById("footer"),
   search: document.getElementById("searchInput"),
-  filterPlatform: document.getElementById("filterPlatform"),
-  topBtn: document.getElementById("topBtn")
+  filter: document.getElementById("filterPlatform")
 };
 
 let allGames = [];
-let currentPlatformFilter = "all";
+let currentPlatform = "all";
 
-/* ---- helpers ---- */
-function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
-function normalizeTitle(n){return n.replace(/\.(gba|zip|gbc|gb)$/i,"").replace(/_/g," ").trim();}
-function setFooter(msg){DOM.footer.textContent = msg;}
-function toJsDelivrUrl(u,r,b,p){return `https://cdn.jsdelivr.net/gh/${u}/${r}@${b}/${p}`;}
+/* --- FUNZIONI UTILI --- */
+function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_");}
+function detectSystemFromPath(path){
+  const p = path.toLowerCase();
+  if(p.includes("/gba/") || p.endsWith(".gba")) return "gba";
+  if(p.includes("/gbc/") || p.endsWith(".gbc")) return "gbc";
+  if(p.includes("/gb/")  || p.endsWith(".gb"))  return "gb";
+  return "gba";
+}
 
-async function fetchJson(url){try{const r=await fetch(url);if(!r.ok)throw new Error();return await r.json();}catch{return []}}
-async function fetchGithubTree(u,r,b){try{const res=await fetch(`https://api.github.com/repos/${u}/${r}/git/trees/${b}?recursive=1`);if(!res.ok)return[];const j=await res.json();return j.tree||[]}catch{return[]}}
+/* --- FETCH --- */
+async function fetchGithubTree(user, repo, branch){
+  const apiUrl = `https://api.github.com/repos/${user}/${repo}/git/trees/${branch}?recursive=1`;
+  const r = await fetch(apiUrl);
+  const json = await r.json();
+  return json.tree || [];
+}
 
-function fileOk(p){return config.acceptExtensions.some(ext=>p.toLowerCase().endsWith(ext))}
-function detectSystem(p){p=p.toLowerCase();if(p.startsWith("gba/")||p.endsWith(".gba"))return"gba";if(p.startsWith("gbc/")||p.endsWith(".gbc"))return"gbc";if(p.startsWith("gb/")||p.endsWith(".gb"))return"gb";return"gba";}
-
-/* ---- load ---- */
 async function loadAllGames(){
-  const gamesJson = await fetchJson(config.gamesJsonUrl);
-  const jsonGames = gamesJson.map(g=>({
-    id:g.id||slugify(g.title),
-    title:g.title,
-    system:(g.system||"gba").toLowerCase(),
-    region:g.region||"EUR",
-    url:g.url,
-    tags:g.tags||[]
-  }));
-
-  const repos = [];
-  for(const repo of config.githubRepos){
-    const tree = await fetchGithubTree(repo.user,repo.repo,repo.branch);
+  const all = [];
+  for(const info of config.githubRepos){
+    const tree = await fetchGithubTree(info.user, info.repo, info.branch);
     for(const item of tree){
-      if(item.type!=="blob"||!fileOk(item.path))continue;
-      const sys=detectSystem(item.path);
-      repos.push({
-        id:slugify(item.path),
-        title:normalizeTitle(item.path.split("/").pop()),
-        system:sys,
-        url:toJsDelivrUrl(repo.user,repo.repo,repo.branch,item.path),
-        region:"EUR"
+      if(item.type !== "blob") continue;
+      if(!config.acceptExtensions.some(ext=>item.path.endsWith(ext))) continue;
+      const sys = detectSystemFromPath(item.path);
+      const title = item.path.split("/").pop().replace(/\.(gba|gbc|gb|zip)$/i,"").replace(/_/g," ");
+      all.push({
+        id: slugify(title+"_"+sys),
+        title,
+        system: sys,
+        url: `https://cdn.jsdelivr.net/gh/${info.user}/${info.repo}@${info.branch}/${item.path}`
       });
     }
   }
-  allGames=[...jsonGames,...repos];
-  allGames.sort((a,b)=>a.title.localeCompare(b.title));
-  setFooter(`${allGames.length} giochi trovati`);
+  allGames = all.sort((a,b)=>a.title.localeCompare(b.title));
+  DOM.footer.textContent = `${allGames.length} giochi trovati`;
+  renderList(allGames);
 }
 
-/* ---- render ---- */
-function cardHtml(g){
-  const logo=config.logos[g.system]||config.logos.gba;
-  return `
-  <article class="card" data-id="${g.id}">
-    <div class="thumb"><img src="${logo}" alt="${g.system} logo"></div>
-    <div><div class="title">${g.title}</div></div>
-    <div class="card-footer">
-      <span class="badge">${g.system.toUpperCase()}</span>
-      <button class="btn" onclick="launchGame('${g.id}')">Play ▶</button>
-    </div>
-  </article>`;
+/* --- RENDER --- */
+function getPlayURL(game){
+  const sys = game.system.toLowerCase();
+  const bios = biosLinks[sys] ? biosLinks[sys].join(",") : "";
+  return `play.html?rom=${encodeURIComponent(game.url)}&title=${encodeURIComponent(game.title)}&system=${sys}&bios=${encodeURIComponent(bios)}`;
 }
 
-function render(list){DOM.grid.innerHTML=list.map(cardHtml).join("");}
+function renderList(list){
+  DOM.grid.innerHTML = list.map(g=>`
+    <article class="card">
+      <div class="thumb"><img src="${config.logos[g.system]}" alt=""></div>
+      <div class="title">${g.title}</div>
+      <div class="badge">${g.system.toUpperCase()}</div>
+      <a href="${getPlayURL(g)}" class="btn">▶ Gioca</a>
+    </article>
+  `).join("");
+}
 
-/* ---- filters ---- */
+/* --- FILTRO --- */
 function applyFilters(){
-  const q=(DOM.search.value||"").toLowerCase();
-  let list=allGames;
-  if(currentPlatformFilter!=="all")list=list.filter(g=>g.system===currentPlatformFilter);
-  if(q)list=list.filter(g=>g.title.toLowerCase().includes(q));
-  render(list);
-  setFooter(`${list.length}/${allGames.length} giochi`);
+  const q = DOM.search.value.trim().toLowerCase();
+  let list = allGames.slice();
+  if(currentPlatform !== "all"){
+    list = list.filter(g => g.system === currentPlatform);
+  }
+  if(q) list = list.filter(g => g.title.toLowerCase().includes(q));
+  renderList(list);
+  DOM.footer.textContent = `${list.length} / ${allGames.length} giochi`;
 }
 
-/* ---- events ---- */
-DOM.search.addEventListener("input",applyFilters);
-DOM.filterPlatform.addEventListener("click",()=>{
-  const seq=["all","gba","gbc","gb"];
-  const next=seq[(seq.indexOf(currentPlatformFilter)+1)%seq.length];
-  currentPlatformFilter=next;
-  DOM.filterPlatform.textContent=next==="all"?"Tutti":next.toUpperCase();
+/* --- EVENTI --- */
+DOM.search.addEventListener("input", applyFilters);
+DOM.filter.addEventListener("click", () => {
+  const next = currentPlatform === "all" ? "gba" : currentPlatform === "gba" ? "gbc" : currentPlatform === "gbc" ? "gb" : "all";
+  currentPlatform = next;
+  DOM.filter.textContent = (next === "all") ? "Tutti" : next.toUpperCase();
   applyFilters();
 });
-window.addEventListener("scroll",()=>{window.scrollY>400?DOM.topBtn.classList.add("show"):DOM.topBtn.classList.remove("show")});
-DOM.topBtn.onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
 
-/* ---- launch ---- */
-function launchGame(id){
-  const g=allGames.find(x=>x.id===id);
-  if(!g)return alert("Gioco non trovato");
-  const p=new URLSearchParams({rom:g.url,title:g.title,system:g.system});
-  window.location.href=`play.html?${p.toString()}`;
-}
-
-/* ---- init ---- */
-(async()=>{
-  setFooter("Caricamento giochi…");
-  await loadAllGames();
-  applyFilters();
-})();
+/* --- INIT --- */
+loadAllGames();
 </script>
 </body>
 </html>
