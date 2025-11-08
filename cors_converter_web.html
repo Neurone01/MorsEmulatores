@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>🔓 CORS Link Converter</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; display:flex; justify-content:center; align-items:center; padding:20px;
+        }
+        .container {
+            background: white; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+            max-width:800px; width:100%; padding:40px; animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn { from { opacity:0; transform:translateY(-30px);} to { opacity:1; transform:translateY(0);} }
+        h1 { text-align:center; color:#667eea; font-size:2.5em; margin-bottom:10px;}
+        .subtitle { text-align:center; color:#666; margin-bottom:30px; font-size:1.1em;}
+        .input-group { margin-bottom:25px; }
+        label { display:block; margin-bottom:8px; color:#333; font-weight:600; font-size:1em; }
+        input[type="text"] {
+            width:100%; padding:15px; border:2px solid #e0e0e0; border-radius:10px; font-size:1em; transition:all .3s;
+        }
+        input[type="text"]:focus { outline:none; border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,0.1); }
+        .button-group { display:flex; gap:10px; margin-bottom:25px; }
+        button { flex:1; padding:15px 30px; border:none; border-radius:10px; font-size:1em; font-weight:600; cursor:pointer; transition:all .3s; }
+        .btn-convert { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; }
+        .btn-convert:hover { transform:translateY(-2px); box-shadow:0 10px 20px rgba(102,126,234,0.3); }
+        .btn-copy { background:#10b981; color:white; }
+        .btn-copy:hover { background:#059669; transform:translateY(-2px); }
+        .btn-clear { background:#ef4444; color:white; }
+        .btn-clear:hover { background:#dc2626; transform:translateY(-2px); }
+        .result-box { background:#f9fafb; border:2px solid #e5e7eb; border-radius:10px; padding:20px; margin-bottom:20px; display:none; }
+        .result-box.show { display:block; animation:fadeIn .5s ease; }
+        @keyframes fadeIn { from { opacity:0;} to { opacity:1;} }
+        .result-title { font-weight:600; color:#333; margin-bottom:10px; font-size:1.1em; }
+        .result-link { background:white; padding:15px; border-radius:8px; word-break:break-all; font-family:'Courier New', monospace; font-size:0.9em; color:#667eea; border:1px solid #e0e0e0; }
+        .download-link { color:#667eea; text-decoration:none; font-weight:600; border-bottom:2px dotted #667eea; transition:all .3s; }
+        .download-link:hover { color:#764ba2; border-bottom:2px solid #764ba2; }
+        .status-box { background:#f9fafb; border-radius:10px; padding:20px; margin-top:20px; display:none; }
+        .status-box.show { display:block; }
+        .status-item { display:flex; align-items:center; padding:12px; margin-bottom:10px; border-radius:8px; background:white; border-left:4px solid #e5e7eb; }
+        .status-item.success { border-left-color:#10b981; background:#f0fdf4; }
+        .status-item.error { border-left-color:#ef4444; background:#fef2f2; }
+        .status-item.testing { border-left-color:#f59e0b; background:#fffbeb; }
+        .status-icon { font-size:1.5em; margin-right:15px; }
+        .status-text { flex:1; }
+        .status-name { font-weight:600; color:#333; }
+        .status-time { font-size:0.9em; color:#666; }
+        .loader { border:3px solid #f3f3f3; border-top:3px solid #667eea; border-radius:50%; width:20px; height:20px; animation:spin 1s linear infinite; display:inline-block; margin-right:10px; }
+        @keyframes spin { 0% { transform:rotate(0deg);} 100% { transform:rotate(360deg);} }
+        .proxy-info { background:#eff6ff; border-left:4px solid #3b82f6; padding:15px; border-radius:8px; margin-top:20px; }
+        .proxy-info strong { color:#1e40af; }
+        .alert { padding:15px; border-radius:10px; margin-top:20px; display:none; }
+        .alert.show { display:block; animation: slideDown .3s ease; }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
+        .alert-success { background:#d1fae5; color:#065f46; border:1px solid #10b981; }
+        .alert-error { background:#fee2e2; color:#991b1b; border:1px solid #ef4444; }
+        .short-url-section { margin-top:15px; padding-top:15px; border-top:1px solid #e5e7eb; }
+        .short-url-title { font-weight:600; color:#10b981; margin-bottom:8px; }
+        .file-note { margin:10px 0; padding:10px; background:#fff3cd; border-left:4px solid #ffc107; border-radius:5px; font-size:0.85em; }
+        .suggestion { margin-top:10px; padding:10px; background:#eff6ff; border-radius:5px; font-size:0.85em; }
+        .action-buttons { display:flex; gap:10px; margin-top:15px; }
+        .action-btn { padding:8px 16px; border:none; border-radius:6px; font-size:0.85em; cursor:pointer; transition:all .3s; }
+        .btn-test { background:#3b82f6; color:white; }
+        .btn-test:hover { background:#2563eb; }
+        .url-comparison { display:flex; gap:10px; margin-top:15px; }
+        .url-box { flex:1; padding:10px; border-radius:8px; background:white; border:1px solid #e5e7eb; }
+        .url-label { font-size:0.8em; color:#666; margin-bottom:5px; }
+        .disabled { opacity:0.6; cursor:not-allowed; pointer-events:none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔓 CORS Link Converter</h1>
+        <p class="subtitle">Converti e shorta link rimuovendo le restrizioni CORS</p>
+
+        <div class="input-group">
+            <label for="urlInput">📎 Inserisci il tuo URL:</label>
+            <input 
+                type="text" 
+                id="urlInput" 
+                placeholder="https://archive.org/download/..." 
+                autocomplete="off"
+            />
+        </div>
+
+        <div class="button-group">
+            <button id="btnConvert" class="btn-convert" onclick="convertAndShorten()">
+                🔄 Converti & Shorta
+            </button>
+            <button id="btnCopyShort" class="btn-copy" onclick="copyShortLink()" disabled>
+                📋 Copia Link Corto
+            </button>
+            <button class="btn-clear" onclick="clearAll()">
+                🧹 Pulisci
+            </button>
+        </div>
+
+        <div id="statusBox" class="status-box"></div>
+
+        <div id="resultBox" class="result-box">
+            <div class="result-title">✅ Risultati:</div>
+            
+            <div class="url-comparison">
+                <div class="url-box">
+                    <div class="url-label">🔗 Link Originale (CORS):</div>
+                    <div class="result-link" id="originalLink"></div>
+                </div>
+                <div class="url-box">
+                    <div class="url-label">🚀 Link Corto (Download diretto):</div>
+                    <div class="result-link">
+                        <a href="#" id="shortDownloadLink" class="download-link" target="_blank" onclick="trackShortDownload(event)">
+                            Clicca per scaricare via link corto
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="shortUrlSection" class="short-url-section" style="display:none;">
+                <div class="short-url-title">📊 Informazioni Link Corto:</div>
+                <div class="result-link" id="shortUrlInfo"></div>
+                <div id="fileNote" class="file-note"></div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn btn-test" onclick="testShortDownload()">
+                        🧪 Test Download Corto
+                    </button>
+                    <button class="action-btn" onclick="copyOriginalLink()" style="background:#6b7280; color:white;">
+                        📋 Copia Link Originale
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="proxyInfo" class="proxy-info" style="display:none;">
+            <strong>🏆 Proxy utilizzato:</strong> <span id="proxyName"></span>
+        </div>
+
+        <div id="alert" class="alert"></div>
+    </div>
+
+    <script>
+        // Lista di proxy CORS (modificabili)
+        const proxies = [
+            {
+                name: 'cors.eu.org (Preserva nome file)',
+                template: (url) => `https://cors.eu.org/${encodeURIComponent(url)}`,
+            },
+            {
+                name: 'allorigins.win (Alternativa)',
+                template: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            }
+        ];
+
+        let bestLink = null;
+        let bestProxy = null;
+        let shortDownloadUrl = null;
+        let fileName = 'download';
+        let fileExt = '';
+
+        // Funzione principale chiamata dal pulsante
+        async function convertAndShorten() {
+            const urlInput = document.getElementById('urlInput').value.trim();
+            if (!urlInput || urlInput === 'https://archive.org/download/...') {
+                showAlert('❌ Inserisci un URL valido!', 'error');
+                return;
+            }
+
+            clearResults();
+            showAlert('⏳ Conversione e shortening in corso...', 'success');
+            document.getElementById('btnConvert').disabled = true;
+
+            // Usa il primo proxy come predefinito
+            const proxy = proxies[0];
+            const proxiedUrl = proxy.template(urlInput);
+            bestLink = proxiedUrl;
+            bestProxy = proxy.name;
+
+            // Estrai informazioni sul file
+            extractFileInfo(urlInput);
+
+            // Mostra risultato di base
+            showResult(proxiedUrl, proxy.name);
+
+            // Genera il link corto usando spoo.me
+            await generateShortDownloadUrl(proxiedUrl);
+
+            document.getElementById('btnConvert').disabled = false;
+        }
+
+        // Estrae nome e estensione file dall'URL originale
+        function extractFileInfo(originalUrl) {
+            try {
+                const decodedUrl = decodeURIComponent(originalUrl);
+                const urlParts = decodedUrl.split('/');
+                const lastPart = urlParts[urlParts.length - 1];
+                const cleanPart = lastPart.split('?')[0] || '';
+                const extMatch = cleanPart.match(/\.([a-zA-Z0-9]{1,8})$/);
+                if (extMatch) {
+                    fileExt = extMatch[1];
+                    const nameMatch = cleanPart.match(/([^\/]+)\.[^.]+$/);
+                    if (nameMatch) {
+                        fileName = nameMatch[1].substring(0, 50);
+                    }
+                } else {
+                    fileExt = '';
+                    fileName = cleanPart ? cleanPart.substring(0,50) : 'download';
+                }
+            } catch (e) {
+                console.log('Errore parsing nome file:', e);
+                fileName = 'download';
+                fileExt = '';
+            }
+        }
+
+        /**
+         * Genera link corto usando spoo.me (POST https://spoo.me/).
+         * Se fallisce o la risposta non è parsabile, prova i fallback definiti in tryAlternativeShortener.
+         */
+        async function generateShortDownloadUrl(proxiedUrl) {
+            try {
+                // Chiamata POST a spoo.me (body form-urlencoded)
+                const response = await fetch('https://spoo.me/', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({ url: proxiedUrl }).toString(),
+                });
+
+                if (!response.ok) {
+                    throw new Error('spoo.me ha risposto con stato ' + response.status);
+                }
+
+                // Try parse JSON
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonErr) {
+                    // Qualche endpoint potrebbe restituire testo; recupera testo e tentare di estrarre l'URL
+                    const text = await response.text();
+                    // Cerca un URL valido nel testo
+                    const urlMatch = text.match(/https?:\/\/[^\s"']+/);
+                    if (urlMatch) {
+                        data = { short_url: urlMatch[0] };
+                    } else {
+                        throw new Error('Risposta spoo.me non parsabile come JSON o testo con URL');
+                    }
+                }
+
+                // Il campo potrebbe chiamarsi short_url oppure url: adattamento robusto
+                const candidate = data && (data.short_url || data.shortUrl || data.url || data.link);
+                if (candidate && typeof candidate === 'string') {
+                    shortDownloadUrl = candidate.trim();
+                    setupShortDownload(shortDownloadUrl);
+                    enableCopyButton(true);
+                    showAlert('✅ Link corto generato con successo (spoo.me)!', 'success');
+                    return;
+                } else {
+                    throw new Error('spoo.me non ha restituito short_url');
+                }
+            } catch (error) {
+                console.warn('spoo.me fallito:', error);
+                // Proviamo fallback automatico (is.gd, tinyurl, v.gd)
+                showStatus('Avviso: spoo.me non disponibile dal browser, provo fallback...', 'testing');
+                const fallback = await tryAlternativeShortener(proxiedUrl);
+                if (fallback) {
+                    shortDownloadUrl = fallback;
+                    setupShortDownload(shortDownloadUrl);
+                    enableCopyButton(true);
+                    showAlert('✅ Link corto generato con fallback!', 'success');
+                } else {
+                    // Se tutto fallisce, usa il proxiedUrl come link (senza shortening)
+                    shortDownloadUrl = proxiedUrl;
+                    setupShortDownload(shortDownloadUrl);
+                    enableCopyButton(true);
+                    showAlert('⚠️ Shortening fallito: uso il link proxy originale.', 'error');
+                }
+            }
+        }
+
+        // Imposta l'interfaccia per il link corto
+        function setupShortDownload(url) {
+            document.getElementById('shortUrlSection').style.display = 'block';
+            const downloadLink = document.getElementById('shortDownloadLink');
+
+            downloadLink.href = url;
+            try {
+                downloadLink.setAttribute('download', getDownloadFilename());
+            } catch (e) {
+                // alcuni browser non permettono download cross-origin con attributo download
+            }
+
+            downloadLink.textContent = `Scarica: ${fileName}${fileExt ? '.' + fileExt : ''} (Link corto)`;
+
+            document.getElementById('shortUrlInfo').innerHTML = `
+                <strong>URL Corto:</strong> <span title="${escapeHtml(url)}">${escapeHtml(url)}</span><br>
+                <strong>File:</strong> ${escapeHtml(fileName)}${fileExt ? '.' + escapeHtml(fileExt) : ''}<br>
+                <strong>Nota:</strong> se il browser blocca il download diretto, apri il link in una nuova scheda.
+            `;
+
+            if (fileExt) {
+                document.getElementById('fileNote').innerHTML = `
+                    <strong>💡 Download diretto:</strong> Il link corto avvierà immediatamente il download
+                    <br><small>File: <code>${escapeHtml(fileName)}.${escapeHtml(fileExt)}</code></small>
+                `;
+            } else {
+                document.getElementById('fileNote').innerHTML = '';
+            }
+
+            // Mostra box risultato se non visibile
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        function getDownloadFilename() {
+            return fileExt ? `${fileName}.${fileExt}` : fileName;
+        }
+
+        function trackShortDownload(event) {
+            // Previeni comportamento indesiderato di download automatico in alcuni casi per tracciare
+            showAlert('⬇️ Download avviato via link corto!', 'success');
+            // non impediamo l'apertura del link
+        }
+
+        function testShortDownload() {
+            if (shortDownloadUrl) {
+                showAlert('🧪 Test download corto in corso...', 'success');
+                window.open(shortDownloadUrl, '_blank');
+            } else {
+                showAlert('⚠️ Nessun link corto disponibile per il test', 'error');
+            }
+        }
+
+        function showResult(link, proxyName) {
+            document.getElementById('resultBox').classList.add('show');
+            document.getElementById('originalLink').textContent = link;
+
+            document.getElementById('proxyInfo').style.display = 'block';
+            document.getElementById('proxyName').textContent = proxyName;
+        }
+
+        // Copia link corto
+        async function copyShortLink() {
+            if (!shortDownloadUrl) {
+                showAlert('⚠️ Nessun link corto disponibile. Converti prima!', 'error');
+                return;
+            }
+            try {
+                await copyToClipboard(shortDownloadUrl);
+                showAlert('✅ Link corto copiato! Pronto per il download.', 'success');
+            } catch (error) {
+                showAlert('❌ Errore nella copia del link', 'error');
+            }
+        }
+
+        // Copia link originale (proxied)
+        async function copyOriginalLink() {
+            if (!bestLink) {
+                showAlert('⚠️ Nessun link disponibile', 'error');
+                return;
+            }
+            try {
+                await copyToClipboard(bestLink);
+                showAlert('✅ Link originale copiato!', 'success');
+            } catch (error) {
+                showAlert('❌ Errore nella copia del link', 'error');
+            }
+        }
+
+        // Copia in clipboard con fallback
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (err) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('urlInput').value = '';
+            clearResults();
+            showAlert('🧹 Tutto pulito!', 'success');
+        }
+
+        function clearResults() {
+            document.getElementById('resultBox').classList.remove('show');
+            document.getElementById('statusBox').classList.remove('show');
+            document.getElementById('statusBox').innerHTML = '';
+            document.getElementById('proxyInfo').style.display = 'none';
+            document.getElementById('shortUrlSection').style.display = 'none';
+            document.getElementById('alert').classList.remove('show');
+            bestLink = null;
+            bestProxy = null;
+            shortDownloadUrl = null;
+            fileName = 'download';
+            fileExt = '';
+            enableCopyButton(false);
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            if (type === 'success') {
+                alert.classList.add('alert-success');
+                alert.classList.remove('alert-error');
+            } else {
+                alert.classList.add('alert-error');
+                alert.classList.remove('alert-success');
+            }
+            setTimeout(() => { alert.classList.remove('show'); }, 5000);
+        }
+
+        // Permetti invio con Enter
+        document.getElementById('urlInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                convertAndShorten();
+            }
+        });
+
+        // Abilita/disabilita il pulsante copia link corto
+        function enableCopyButton(enabled) {
+            const btn = document.getElementById('btnCopyShort');
+            btn.disabled = !enabled;
+            if (enabled) btn.classList.remove('disabled'); else btn.classList.add('disabled');
+        }
+
+        // Mostra messaggi nello statusBox (log)
+        function showStatus(message, type = 'info') {
+            const box = document.getElementById('statusBox');
+            box.classList.add('show');
+            const div = document.createElement('div');
+            div.className = 'status-item ' + (type === 'testing' ? 'testing' : (type === 'error' ? 'error' : 'success'));
+            div.innerHTML = `<div class="status-text"><div class="status-name">${escapeHtml(message)}</div></div>`;
+            box.appendChild(div);
+            // Mantieni solo gli ultimi 6 messaggi
+            while (box.children.length > 6) box.removeChild(box.firstChild);
+        }
+
+        // Fallback: prova altri servizi di shortening se spoo.me non risponde
+        async function tryAlternativeShortener(url) {
+            const services = [
+                { name: 'is.gd', url: `https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`, type: 'json' },
+                { name: 'v.gd', url: `https://v.gd/create.php?format=json&url=${encodeURIComponent(url)}`, type: 'json' },
+                { name: 'tinyurl', url: `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`, type: 'text' },
+                { name: 'is.gd (text)', url: `https://is.gd/create.php?url=${encodeURIComponent(url)}`, type: 'text' },
+            ];
+
+            for (let svc of services) {
+                try {
+                    showStatus(`Provo ${svc.name}...`, 'testing');
+                    const resp = await fetch(svc.url);
+                    if (!resp.ok) {
+                        showStatus(`${svc.name} risponde ${resp.status}`, 'error');
+                        continue;
+                    }
+                    if (svc.type === 'json') {
+                        const data = await resp.json();
+                        // is.gd/v.gd: data.shorturl
+                        const candidate = data.shorturl || data.short_url || data.url;
+                        if (candidate) {
+                            showStatus(`${svc.name} OK`, 'success');
+                            return candidate;
+                        }
+                    } else {
+                        const txt = await resp.text();
+                        const candidate = txt.trim();
+                        if (candidate && candidate.startsWith('http')) {
+                            showStatus(`${svc.name} OK`, 'success');
+                            return candidate;
+                        }
+                    }
+                } catch (err) {
+                    console.warn(`${svc.name} errore:`, err);
+                    showStatus(`${svc.name} errore`, 'error');
+                    continue;
+                }
+            }
+            return null;
+        }
+
+        // Piccola utility per evitare XSS nella UI
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
