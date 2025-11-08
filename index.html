@@ -6,23 +6,18 @@
   <title>MorsEmulatores — Libreria</title>
 
   <style>
-    :root{
+    :root {
       --bg:#05060a;
       --card:#0f1116;
       --muted:#9fb0c0;
       --accent:#00aaff;
       --accent-2:#00ffd1;
-      --gap:14px;
       --radius:12px;
-      --glass: rgba(255,255,255,0.03);
-      --shadow: 0 6px 18px rgba(0,0,0,0.6);
-      --touch-size:52px;
+      --shadow:0 6px 18px rgba(0,0,0,0.6);
       --max-width:1300px;
-      --header-height:84px;
     }
 
-    html,body{
-      height:100%;
+    body {
       margin:0;
       font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
       background:linear-gradient(180deg,#04050a 0%, #071025 100%);
@@ -32,239 +27,169 @@
       scroll-behavior:smooth;
     }
 
-    .wrap{
+    .wrap {
       max-width:var(--max-width);
-      margin:0 auto;
+      margin:auto;
       padding:18px;
-      padding-top: 8px;
     }
 
-    header{
+    header {
       display:flex;
-      gap:16px;
+      flex-wrap:wrap;
       align-items:center;
       justify-content:space-between;
-      margin-bottom:14px;
-      position: sticky;
-      top: 0;
-      z-index: 120;
-      background: linear-gradient(180deg, rgba(5,6,10,0.85), rgba(5,6,10,0.6));
-      backdrop-filter: blur(6px);
-      padding:12px 14px;
-      border-radius:12px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    }
-
-    .brand{
-      display:flex;
       gap:12px;
-      align-items:center;
-    }
-    .brand h1{
-      font-size:18px;
-      margin:0;
-      letter-spacing:0.2px;
-    }
-    .brand p{
-      margin:0;
-      color:var(--muted);
-      font-size:12px;
+      margin-bottom:16px;
+      background:rgba(10,12,18,0.75);
+      backdrop-filter:blur(8px);
+      border-radius:var(--radius);
+      padding:12px 16px;
+      box-shadow:var(--shadow);
+      position:sticky;
+      top:0;
+      z-index:50;
     }
 
-    .searchbar{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex:1;
-      margin-left:20px;
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand div:first-child {
+      width:44px; height:44px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:10px;
+      background:linear-gradient(90deg,#001b2b,#003d52);
+      font-weight:800; color:var(--accent);
     }
+    .brand h1 { font-size:18px; margin:0; }
+    .brand p { margin:0; font-size:12px; color:var(--muted); }
 
-    .searchbar input{
+    .searchbar input {
       width:100%;
       padding:12px 14px;
-      border-radius:12px;
+      border-radius:10px;
       border:0;
-      background:rgba(255,255,255,0.03);
+      background:rgba(255,255,255,0.04);
       color:inherit;
-      outline: none;
       font-size:15px;
-      box-shadow: var(--shadow);
+      outline:none;
+      box-shadow:var(--shadow);
     }
 
-    .controls{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      margin-left:12px;
+    .controls {
+      display:flex; align-items:center; gap:10px;
     }
-
-    .chip{
-      background:var(--glass);
-      color:var(--muted);
+    .chip {
+      background:rgba(255,255,255,0.05);
       padding:8px 12px;
       border-radius:999px;
-      font-size:13px;
+      color:var(--muted);
       cursor:pointer;
-      border:1px solid rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.05);
       transition:all .18s ease;
-      user-select:none;
     }
-    .chip:active{ transform:translateY(1px) scale(.997) }
-    .chip.primary{ background:linear-gradient(90deg,var(--accent),#006bb3); color:#02121a; font-weight:600; border: 0; }
+    .chip:hover { background:rgba(255,255,255,0.08); }
+    .chip:active { transform:scale(.97); }
 
-    main{ display:grid; gap:var(--gap); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items:start; padding-top:10px;}
-    @media(min-width:900px){ main{ grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); } }
-    @media(min-width:1400px){ main{ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+    main {
+      display:grid;
+      gap:16px;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      align-items:start;
+    }
 
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    .card {
+      background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.1));
       border-radius:var(--radius);
       padding:12px;
-      display:flex;
-      flex-direction:column;
+      box-shadow:var(--shadow);
+      display:flex; flex-direction:column;
       gap:10px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,0.02);
-      transition: transform .18s ease, box-shadow .18s ease;
+      transition:transform .2s ease, box-shadow .2s ease;
     }
-    .card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(0,0,0,0.7); }
+    .card:hover { transform:translateY(-5px); box-shadow:0 14px 30px rgba(0,0,0,0.7); }
 
-    .thumb{
-      height:96px;
+    .thumb {
+      height:100px;
       border-radius:10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,0.02);
       overflow:hidden;
-      padding:8px;
     }
-    .thumb img{ max-width:100%; max-height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
+    .thumb img { max-width:100%; max-height:100%; }
 
-    .title{
-      font-size:15px;
-      line-height:1.25;
-      font-weight:700;
-      color:#f1f8ff;
-      margin:0;
-      word-break:break-word;
-      white-space: normal;
-    }
+    .title { font-size:15px; font-weight:700; color:#f1f8ff; margin:0; }
+    .tags { display:flex; gap:6px; flex-wrap:wrap; }
+    .tag { font-size:12px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:8px; color:var(--muted); }
 
-    .meta{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:auto; }
+    .badge { font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(0,0,0,0.25); color:var(--accent); font-weight:700; }
 
-    .badge{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      background:rgba(0,0,0,0.25);
-      color:var(--accent);
-      border:1px solid rgba(0,170,255,0.09);
-      font-weight:700;
-    }
+    .card-footer { display:flex; justify-content:space-between; align-items:center; margin-top:auto; }
 
-    .tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
-    .tag{ font-size:12px; background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:8px; color:var(--muted); }
-
-    .card-footer{ display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:4px; }
-
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:10px 14px;
+    .btn {
       background:linear-gradient(90deg,var(--accent),#007bbd);
       color:#02121a;
-      font-weight:700;
+      padding:10px 14px;
       border-radius:10px;
-      border: none;
+      font-weight:700;
+      border:0;
       cursor:pointer;
-      text-decoration:none;
-      font-size:14px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+      box-shadow:0 8px 20px rgba(0,0,0,0.45);
     }
-    .btn:active{ transform:translateY(1px) }
+    .btn:hover { transform:translateY(-1px); }
+    .btn:active { transform:translateY(1px); }
 
-    #topBtn{
-      position:fixed;
-      right:20px;
-      bottom:20px;
-      width:56px;
-      height:56px;
+    #topBtn {
+      position:fixed; right:20px; bottom:20px;
+      width:56px; height:56px;
       border-radius:50%;
       background:linear-gradient(180deg,#00b3ff,#006bb3);
-      display:flex;
-      align-items:center;
-      justify-content:center;
       color:white;
-      font-size:22px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; border:0;
+      box-shadow:0 12px 30px rgba(0,0,0,0.6);
+      opacity:0; transform:translateY(10px);
+      transition:all .26s ease;
       cursor:pointer;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-      border:0;
-      transform:translateY(12px) scale(.95);
-      opacity:0;
-      transition: all .26s cubic-bezier(.2,.9,.28,1);
-      z-index:40;
     }
-    #topBtn.show{ opacity:1; transform:translateY(0) scale(1); }
+    #topBtn.show { opacity:1; transform:translateY(0); }
 
-    footer{
-      margin-top:18px;
+    footer {
+      margin-top:20px;
       color:var(--muted);
-      font-size:13px;
       text-align:center;
+      font-size:13px;
       padding-bottom:32px;
     }
-
-    @media (max-width:520px){
-      header{ flex-direction:column; align-items:stretch; gap:12px; padding:10px; border-radius:10px; }
-      .brand p{ display:none; }
-      .searchbar{ margin-left:0; }
-      .thumb{ height:88px; }
-      .btn{ padding:12px 16px; font-size:15px; }
-    }
-
-    .card:focus-within{ outline: 2px solid rgba(0,170,255,0.14); transform: translateY(-6px); }
-    .btn:focus{ outline: 2px solid rgba(0,170,255,0.16); }
-
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div class="brand">
-        <div style="width:44px;height:44px;border-radius:9px;background:linear-gradient(90deg,#001b2b,#003d52);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);">
-          EM
-        </div>
+        <div>EM</div>
         <div>
           <h1>MorsEmulatores</h1>
-          <p>GBA / GBC / GB — Libreria giochi</p>
+          <p>Libreria giochi GBA / GBC / GB</p>
         </div>
       </div>
 
-      <div style="flex:1;display:flex;align-items:center;gap:12px;">
-        <div class="searchbar" style="flex:1">
-          <input id="searchInput" placeholder="Cerca titolo, piattaforma, tag... (es. pokemon, gba)" aria-label="Cerca giochi" />
+      <div style="flex:1; display:flex; align-items:center; gap:12px;">
+        <div class="searchbar" style="flex:1;">
+          <input id="searchInput" placeholder="Cerca titolo, piattaforma, tag…" aria-label="Cerca giochi" />
         </div>
-
-        <div class="controls" style="margin-left:12px;">
+        <div class="controls">
           <div class="chip" id="filterPlatform">Tutti</div>
-          <div class="chip" id="sortBtn">Ordina: A → Z</div>
         </div>
       </div>
     </header>
 
     <main id="gameGrid" aria-live="polite"></main>
-
     <footer id="footer">Caricamento giochi…</footer>
   </div>
 
-  <button id="topBtn" aria-label="Torna su" title="Torna in cima">↑</button>
+  <button id="topBtn" aria-label="Torna su" title="Torna su">↑</button>
 
 <script>
 "use strict";
 
-/* ---------- config ---------- */
 const config = {
   gamesJsonUrl: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
   githubRepos: [
@@ -276,282 +201,115 @@ const config = {
     gb:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
     gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
   },
-  europeRegex: /\b(Europe|EUR|Europe\)|Europe\(|Europe,)\b/i
+  europeRegex: /\b(Europe|EUR)\b/i
 };
 
-/* ---------- DOM ---------- */
 const DOM = {
   grid: document.getElementById("gameGrid"),
   footer: document.getElementById("footer"),
   search: document.getElementById("searchInput"),
   filterPlatform: document.getElementById("filterPlatform"),
-  sortBtn: document.getElementById("sortBtn"),
   topBtn: document.getElementById("topBtn")
 };
 
 let allGames = [];
 let currentPlatformFilter = "all";
-let sortAsc = true;
 
-/* ---------- helpers ---------- */
-function setFooter(msg){ DOM.footer.textContent = msg; }
-function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"") }
-function normalizeTitleFromFilename(name){ return name.replace(/\.(gba|zip|gbc|gb)$/i,"").replace(/_/g," ").trim(); }
+/* ---- helpers ---- */
+function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
+function normalizeTitle(n){return n.replace(/\.(gba|zip|gbc|gb)$/i,"").replace(/_/g," ").trim();}
+function setFooter(msg){DOM.footer.textContent = msg;}
+function toJsDelivrUrl(u,r,b,p){return `https://cdn.jsdelivr.net/gh/${u}/${r}@${b}/${p}`;}
 
-async function fetchJson(url){
-  try{
-    const r = await fetch(url);
-    if(!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
-  }catch(e){
-    console.warn("fetchJson error",url,e);
-    return null;
-  }
-}
+async function fetchJson(url){try{const r=await fetch(url);if(!r.ok)throw new Error();return await r.json();}catch{return []}}
+async function fetchGithubTree(u,r,b){try{const res=await fetch(`https://api.github.com/repos/${u}/${r}/git/trees/${b}?recursive=1`);if(!res.ok)return[];const j=await res.json();return j.tree||[]}catch{return[]}}
 
-async function fetchGithubTree(user, repo, branch){
-  const apiUrl = `https://api.github.com/repos/${user}/${repo}/git/trees/${branch}?recursive=1`;
-  try{
-    const r = await fetch(apiUrl, { headers: { Accept: "application/vnd.github.v3+json" }});
-    if(!r.ok) throw new Error(`GitHub API ${r.status}`);
-    const json = await r.json();
-    return json.tree || [];
-  }catch(e){
-    console.warn("fetchGithubTree failed", apiUrl, e);
-    return [];
-  }
-}
+function fileOk(p){return config.acceptExtensions.some(ext=>p.toLowerCase().endsWith(ext))}
+function detectSystem(p){p=p.toLowerCase();if(p.startsWith("gba/")||p.endsWith(".gba"))return"gba";if(p.startsWith("gbc/")||p.endsWith(".gbc"))return"gbc";if(p.startsWith("gb/")||p.endsWith(".gb"))return"gb";return"gba";}
 
-function fileIsAcceptable(path){ const lower = path.toLowerCase(); return config.acceptExtensions.some(ext => lower.endsWith(ext)); }
-function pathMatchesFolders(path, folders){ const parts = path.split("/"); return folders.includes(parts[0].toLowerCase()); }
-function detectSystemFromPath(path){
-  const p = path.toLowerCase();
-  if(p.startsWith("gba/") || p.endsWith(".gba")) return "gba";
-  if(p.startsWith("gbc/") || p.endsWith(".gbc")) return "gbc";
-  if(p.startsWith("gb/")  || p.endsWith(".gb")) return "gb";
-  return "gba";
-}
-function toJsDelivrUrl(user, repo, branch, path){
-  // Codifica correttamente il path per jsDelivr
-  return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
-}
-function entryFromGithubFile(user, repo, branch, filePath){
-  const filename = filePath.split("/").pop();
-  const title = normalizeTitleFromFilename(filename);
-  const system = detectSystemFromPath(filePath);
-  const download = toJsDelivrUrl(user, repo, branch, filePath);
-  const id = slugify(`${system}_${title}`);
-  return {
-    id, title, system, region: (config.europeRegex.test(filename) ? "EUR" : "OTHER"),
-    url: download, source: `github:${user}/${repo}/${branch}`, rawPath: filePath, tags: []
-  };
-}
-
-/* ---------- load and merge ---------- */
+/* ---- load ---- */
 async function loadAllGames(){
-  setFooter("Caricamento games.json ...");
-  const gamesJson = await fetchJson(config.gamesJsonUrl) || [];
-  const fromJson = (gamesJson || []).map(g => {
-    const system = (g.system || g.platform || "gba").toLowerCase();
-    return {
-      id: g.id || slugify(`${system}_${g.name||g.title||"game"}`),
-      title: (g.name || g.title || g.id || "Unknown"),
-      system,
-      region: g.region || (config.europeRegex.test((g.title||g.name||"")) ? "EUR" : (g.region||"")),
-      url: g.url,
-      source: "games.json",
-      tags: g.tags || []
-    };
-  });
-
-  setFooter("Scansione repo GitHub...");
-  let fromRepos = [];
-  for(const repoInfo of config.githubRepos){
-    const tree = await fetchGithubTree(repoInfo.user, repoInfo.repo, repoInfo.branch);
-    if(!tree || !tree.length) continue;
-    for(const item of tree){
-      if(item.type !== "blob") continue;
-      if(!fileIsAcceptable(item.path)) continue;
-      if(!pathMatchesFolders(item.path, repoInfo.folders)) continue;
-      if(!config.europeRegex.test(item.path) && !config.europeRegex.test(item.path.split("/").pop())) continue;
-      fromRepos.push(entryFromGithubFile(repoInfo.user, repoInfo.repo, repoInfo.branch, item.path));
-    }
-  }
-
-  // merge con priorità a games.json per gli URL
-  const map = new Map();
-  for(const g of fromRepos){
-    const key = (g.title||"").toLowerCase();
-    if(!map.has(key)) map.set(key, g);
-  }
-  for(const g of fromJson){
-    const key = (g.title||"").toLowerCase();
-    if(!map.has(key)){
-      map.set(key, g);
-    } else {
-      const existing = map.get(key);
-      // Se games.json ha un URL migliore (es. catbox), usalo
-      if(existing && existing.source && existing.source.startsWith("github") && g.url && g.url.includes("catbox.moe")){
-        map.set(key, {...existing, url: g.url, source: "games.json+override"});
-      }
-    }
-  }
-
-  allGames = Array.from(map.values()).map(g => ({
-    id: g.id || slugify(g.title),
-    title: g.title || "Untitled",
-    system: (g.system||g.platform||"gba").toLowerCase(),
-    region: g.region || "EUR",
-    url: g.url || null,
-    tags: g.tags || [],
-    source: g.source || "unknown"
+  const gamesJson = await fetchJson(config.gamesJsonUrl);
+  const jsonGames = gamesJson.map(g=>({
+    id:g.id||slugify(g.title),
+    title:g.title,
+    system:(g.system||"gba").toLowerCase(),
+    region:g.region||"EUR",
+    url:g.url,
+    tags:g.tags||[]
   }));
 
-  setFooter(`${allGames.length} giochi trovati (solo Europei).`);
-  
-  // Debug: mostra i primi 3 URL generati
-  console.log("=== SAMPLE GAME URLS ===");
-  allGames.slice(0, 3).forEach((g, i) => {
-    console.log(`[${i+1}] ${g.title} (${g.system})`);
-    console.log(`    URL: ${g.url}`);
-    console.log(`    Source: ${g.source}`);
-  });
-  
-  return allGames;
+  const repos = [];
+  for(const repo of config.githubRepos){
+    const tree = await fetchGithubTree(repo.user,repo.repo,repo.branch);
+    for(const item of tree){
+      if(item.type!=="blob"||!fileOk(item.path))continue;
+      const sys=detectSystem(item.path);
+      repos.push({
+        id:slugify(item.path),
+        title:normalizeTitle(item.path.split("/").pop()),
+        system:sys,
+        url:toJsDelivrUrl(repo.user,repo.repo,repo.branch,item.path),
+        region:"EUR"
+      });
+    }
+  }
+  allGames=[...jsonGames,...repos];
+  allGames.sort((a,b)=>a.title.localeCompare(b.title));
+  setFooter(`${allGames.length} giochi trovati`);
 }
 
-/* ---------- render ---------- */
-function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
-
-function cardHtml(game){
-  const title = game.title || "Untitled";
-  const system = (game.system || "gba").toLowerCase();
-  const logo = config.logos[system] || config.logos.gba;
-  const tags = (game.tags || []);
-  
+/* ---- render ---- */
+function cardHtml(g){
+  const logo=config.logos[g.system]||config.logos.gba;
   return `
-    <article class="card" data-id="${escapeHtml(game.id)}" data-system="${escapeHtml(system)}" data-title="${escapeHtml(title.toLowerCase())}">
-      <div class="thumb" aria-hidden="true">
-        <img alt="${escapeHtml(title)}" src="${logo}" loading="lazy">
-      </div>
-
-      <div>
-        <div class="title">${escapeHtml(title)}</div>
-        <div class="tags">${tags.slice(0,4).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
-      </div>
-
-      <div class="card-footer" style="margin-top:12px">
-        <div class="badge" aria-hidden="true">${system.toUpperCase()}</div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" onclick="launchGame('${escapeHtml(game.id)}')" title="Gioca ${escapeHtml(title)}">Play ▶</button>
-        </div>
-      </div>
-    </article>
-  `;
+  <article class="card" data-id="${g.id}">
+    <div class="thumb"><img src="${logo}" alt="${g.system} logo"></div>
+    <div><div class="title">${g.title}</div></div>
+    <div class="card-footer">
+      <span class="badge">${g.system.toUpperCase()}</span>
+      <button class="btn" onclick="launchGame('${g.id}')">Play ▶</button>
+    </div>
+  </article>`;
 }
 
-function renderList(list){
-  DOM.grid.innerHTML = list.map(cardHtml).join("\n");
-  document.querySelectorAll(".card").forEach(card => {
-    card.tabIndex = 0;
-    card.onkeydown = (e) => {
-      if(e.key === "Enter" || e.key === " ") {
-        const id = card.getAttribute("data-id");
-        launchGame(id);
-      }
-    };
-  });
+function render(list){DOM.grid.innerHTML=list.map(cardHtml).join("");}
+
+/* ---- filters ---- */
+function applyFilters(){
+  const q=(DOM.search.value||"").toLowerCase();
+  let list=allGames;
+  if(currentPlatformFilter!=="all")list=list.filter(g=>g.system===currentPlatformFilter);
+  if(q)list=list.filter(g=>g.title.toLowerCase().includes(q));
+  render(list);
+  setFooter(`${list.length}/${allGames.length} giochi`);
 }
 
-/* ---------- filtering / searching ---------- */
-function applyFiltersAndRender(){
-  const q = (DOM.search.value||"").trim().toLowerCase();
-  let list = allGames.slice();
-
-  if(currentPlatformFilter !== "all"){
-    list = list.filter(g => g.system === currentPlatformFilter);
-  }
-
-  if(q){
-    list = list.filter(g => {
-      return (g.title || "").toLowerCase().includes(q) ||
-             (g.tags || []).join(" ").toLowerCase().includes(q) ||
-             (g.system || "").toLowerCase().includes(q);
-    });
-  }
-
-  list.sort((a,b) => {
-    const A = a.title.toLowerCase(), B = b.title.toLowerCase();
-    return sortAsc ? A.localeCompare(B) : B.localeCompare(A);
-  });
-
-  renderList(list);
-  setFooter(`${list.length} / ${allGames.length} giochi`);
-}
-
-/* ---------- UI events ---------- */
-DOM.search.addEventListener("input", () => applyFiltersAndRender());
-DOM.filterPlatform.addEventListener("click", () => {
-  const order = ["all","gba","gb","gbc"];
-  const curIndex = order.indexOf(currentPlatformFilter);
-  const next = order[(curIndex+1)%order.length];
-  currentPlatformFilter = next;
-  DOM.filterPlatform.textContent = (next === "all") ? "Tutti" : next.toUpperCase();
-  applyFiltersAndRender();
+/* ---- events ---- */
+DOM.search.addEventListener("input",applyFilters);
+DOM.filterPlatform.addEventListener("click",()=>{
+  const seq=["all","gba","gbc","gb"];
+  const next=seq[(seq.indexOf(currentPlatformFilter)+1)%seq.length];
+  currentPlatformFilter=next;
+  DOM.filterPlatform.textContent=next==="all"?"Tutti":next.toUpperCase();
+  applyFilters();
 });
-DOM.sortBtn.addEventListener("click", () => {
-  sortAsc = !sortAsc;
-  DOM.sortBtn.textContent = `Ordina: ${sortAsc ? "A → Z" : "Z → A"}`;
-  applyFiltersAndRender();
-});
+window.addEventListener("scroll",()=>{window.scrollY>400?DOM.topBtn.classList.add("show"):DOM.topBtn.classList.remove("show")});
+DOM.topBtn.onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
 
-/* ---------- launch ---------- */
-function findGameById(id){
-  return allGames.find(g => g.id === id);
+/* ---- launch ---- */
+function launchGame(id){
+  const g=allGames.find(x=>x.id===id);
+  if(!g)return alert("Gioco non trovato");
+  const p=new URLSearchParams({rom:g.url,title:g.title,system:g.system});
+  window.location.href=`play.html?${p.toString()}`;
 }
 
-function launchGame(gameId){
-  const game = findGameById(gameId);
-  if(!game){
-    alert("Gioco non trovato");
-    console.error("Game not found:", gameId);
-    return;
-  }
-  
-  if(!game.url){
-    alert("URL ROM non disponibile per questo gioco");
-    console.error("Missing URL for game:", game);
-    return;
-  }
-  
-  // Debug
-  console.log("🎮 Launching:", game.title);
-  console.log("📦 System:", game.system);
-  console.log("🔗 URL:", game.url);
-  
-  // Passa i parametri corretti al player
-  const params = new URLSearchParams();
-  params.set("rom", game.url);  // ← IMPORTANTE: usa 'rom' non 'url'
-  params.set("title", game.title);
-  params.set("system", game.system);
-  
-  window.location.href = `play.html?${params.toString()}`;
-}
-
-/* ---------- back to top ---------- */
-function handleScrollForTopBtn(){
-  if(window.scrollY > 380) DOM.topBtn.classList.add("show");
-  else DOM.topBtn.classList.remove("show");
-}
-DOM.topBtn.addEventListener("click", ()=> window.scrollTo({ top: 0, behavior: "smooth" }));
-window.addEventListener("scroll", handleScrollForTopBtn);
-
-/* ---------- bootstrap ---------- */
-(async function init(){
-  setFooter("Inizializzazione…");
+/* ---- init ---- */
+(async()=>{
+  setFooter("Caricamento giochi…");
   await loadAllGames();
-  applyFiltersAndRender();
-  handleScrollForTopBtn();
+  applyFilters();
 })();
 </script>
 </body>
