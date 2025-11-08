@@ -60,11 +60,9 @@
 <body>
 
 <div id="status">Caricamento gioco...</div>
-
 <canvas id="canvas" class="emscripten"></canvas>
 <input id="fileInput0" type="file" style="display:none">
 
-<!-- Core emulatore ufficiale -->
 <script src="https://web.skyemu.app/SkyEmu.js"></script>
 
 <script>
@@ -73,7 +71,18 @@
 const params = new URLSearchParams(location.search);
 const romURL = decodeURIComponent(params.get("rom"));
 const title = decodeURIComponent(params.get("title") || "Gioco");
+
 const STATUS = document.getElementById("status");
+
+// BIOS LINKS (no CORS, via jsDelivr)
+const BIOS = {
+  gba: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin",
+  gbc: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin",
+  gb: [
+    "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gb_bios.bin",
+    "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
+  ]
+};
 
 function setStatus(msg) {
   STATUS.textContent = msg;
@@ -102,10 +111,10 @@ function waitForModule(timeout = 5000) {
   });
 }
 
-async function fetchROM(url) {
-  const r = await fetch(url, { mode: "cors" });
-  if (!r.ok) throw new Error("Download fallito: " + r.status);
-  return new Uint8Array(await r.arrayBuffer());
+async function fetchBinary(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Errore fetch: " + res.status);
+  return new Uint8Array(await res.arrayBuffer());
 }
 
 function setFileInput(fileInput, file) {
@@ -123,8 +132,28 @@ function goFullscreen() {
   else if (el.msRequestFullscreen) el.msRequestFullscreen();
 }
 
+function detectSystem(fileName) {
+  const ext = fileName.toLowerCase();
+  if (ext.endsWith(".gba")) return "gba";
+  if (ext.endsWith(".gbc")) return "gbc";
+  if (ext.endsWith(".gb")) return "gb";
+  return null;
+}
+
+async function loadBIOSFor(system) {
+  const files = Array.isArray(BIOS[system]) ? BIOS[system] : [BIOS[system]];
+  for (const url of files) {
+    const data = await fetchBinary(url);
+    const name = url.split("/").pop();
+    const blob = new Blob([data], { type: "application/octet-stream" });
+    const file = new File([blob], name);
+    setFileInput(document.getElementById("fileInput0"), file);
+  }
+}
+
 async function launchROM(url) {
   setStatus("Scaricamento " + title + "...");
+
   const Module = await waitForModule();
   if (!Module) {
     setStatus("Errore: Modulo non trovato!");
@@ -132,17 +161,26 @@ async function launchROM(url) {
   }
 
   try {
-    const data = await fetchROM(url);
+    const data = await fetchBinary(url);
     const filename = url.split("/").pop();
+    const system = detectSystem(filename);
+
+    // Carica BIOS appropriato
+    if (system) {
+      setStatus("Caricamento BIOS " + system.toUpperCase() + "...");
+      await loadBIOSFor(system);
+    }
+
+    // Carica ROM
     const blob = new Blob([data], { type: "application/octet-stream" });
     const file = new File([blob], filename);
     setFileInput(document.getElementById("fileInput0"), file);
 
-    // Nasconde status e forza schermo intero
     setTimeout(() => {
       STATUS.style.display = "none";
       goFullscreen();
     }, 1000);
+
   } catch (err) {
     setStatus("Errore: " + err.message);
     console.error(err);
