@@ -3,286 +3,213 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>MorsEmulatores — Libreria</title>
+  <title>MorsEmulatores</title>
   <style>
-    :root {
-      --bg:#05060a;
-      --card:#0f1116;
-      --muted:#9fb0c0;
-      --accent:#00aaff;
-      --accent-2:#00ffd1;
-      --gap:14px;
-      --radius:12px;
-      --shadow:0 6px 18px rgba(0,0,0,0.6);
-    }
-
-    html,body {
-      height:100%;
-      margin:0;
-      font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
-      background:linear-gradient(180deg,#04050a 0%, #071025 100%);
-      color:#e6f0f6;
-    }
-
-    .wrap {
-      max-width:1300px;
-      margin:0 auto;
-      padding:18px;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #0b0c10, #0d1117);
+      color: #d1e0f0;
+      overflow-x: hidden;
     }
 
     header {
-      position:sticky;
-      top:0;
-      z-index:20;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      padding:10px 14px;
-      border-radius:12px;
-      background:linear-gradient(180deg,rgba(5,6,10,0.85),rgba(5,6,10,0.6));
-      backdrop-filter:blur(8px);
-      box-shadow:var(--shadow);
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 10px 0;
+      text-align: center;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
     }
 
-    .brand {
-      display:flex;
-      gap:10px;
-      align-items:center;
+    h1 {
+      margin: 6px 0;
+      font-size: 22px;
+      color: #58a6ff;
+      letter-spacing: 1px;
     }
 
-    .brand h1 { margin:0; font-size:18px; }
-    .brand p { margin:0; color:var(--muted); font-size:12px; }
-
-    .searchbar {
-      flex:1;
-      position:relative;
+    #search {
+      width: 60%;
+      max-width: 400px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 14px;
     }
 
-    .searchbar input {
-      width:100%;
-      padding:12px 14px;
-      border-radius:12px;
-      border:0;
-      background:rgba(255,255,255,0.05);
-      color:inherit;
-      outline:none;
-      font-size:15px;
-      box-shadow:var(--shadow);
+    #filterPlatform {
+      background: rgba(255,255,255,0.08);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #9fb0c0;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 14px;
     }
 
     main {
-      display:grid;
-      gap:var(--gap);
-      grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
-      margin-top:14px;
+      margin-top: 140px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      padding: 20px;
     }
 
-    .card {
-      background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);
-      border-radius:var(--radius);
-      padding:12px;
-      display:flex;
-      flex-direction:column;
-      box-shadow:var(--shadow);
-      transition:transform .18s ease;
+    .game {
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
 
-    .card:hover { transform:translateY(-5px); }
-
-    .thumb {
-      height:100px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:10px;
-      background:rgba(255,255,255,0.04);
-      overflow:hidden;
-      margin-bottom:10px;
+    .game:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 18px rgba(0,0,0,0.7);
     }
 
-    .thumb img {
-      max-width:100%;
-      max-height:100%;
-      object-fit:contain;
-      filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6));
+    .game img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
     }
 
-    .title { font-size:15px; font-weight:700; margin-bottom:8px; }
-
-    .badge {
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      background:rgba(0,0,0,0.25);
-      color:var(--accent);
-      border:1px solid rgba(0,170,255,0.1);
-      font-weight:700;
+    .game h2 {
+      font-size: 15px;
+      text-align: center;
+      color: #dce6f0;
+      padding: 10px;
+      margin: 0;
+      height: 60px;
     }
 
-    .btn {
-      display:inline-block;
-      background:linear-gradient(90deg,var(--accent),#007bbd);
-      color:#02121a;
-      padding:10px 14px;
-      border-radius:10px;
-      font-weight:700;
-      text-decoration:none;
-      margin-top:auto;
-      text-align:center;
+    .play-btn {
+      display: block;
+      text-align: center;
+      background: #238636;
+      color: #fff;
+      padding: 10px;
+      font-weight: bold;
+      text-decoration: none;
+      border-radius: 0 0 15px 15px;
     }
 
-    footer { text-align:center; color:var(--muted); margin-top:20px; }
+    .play-btn:hover {
+      background: #2ea043;
+    }
+
+    #backToTop {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: rgba(30, 30, 30, 0.85);
+      color: #00aaff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      line-height: 40px;
+      cursor: pointer;
+      display: none;
+      font-size: 22px;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    #backToTop:hover {
+      background: rgba(50,50,50,0.9);
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
-<div class="wrap">
   <header>
-    <div class="brand">
-      <div style="width:44px;height:44px;border-radius:9px;background:linear-gradient(90deg,#001b2b,#003d52);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);">
-        EM
-      </div>
-      <div>
-        <h1>MorsEmulatores</h1>
-        <p>GBA / GBC / GB — Libreria giochi</p>
-      </div>
-    </div>
-
-    <div class="searchbar">
-      <input id="searchInput" placeholder="Cerca titolo o piattaforma..." aria-label="Cerca giochi">
-    </div>
-
-    <div>
-      <button id="filterPlatform" style="background:rgba(255,255,255,0.08);border:0;padding:10px 12px;border-radius:8px;color:#9fb0c0;cursor:pointer;">
-        Tutti
-      </button>
-    </div>
+    <h1>MorsEmulatores</h1>
+    <input type="text" id="search" placeholder="🔍 Cerca un gioco...">
+    <br>
+    <button id="filterPlatform">GBA</button>
   </header>
 
-  <main id="gameGrid"></main>
+  <main id="gamesContainer">Caricamento...</main>
 
-  <footer id="footer">Caricamento giochi…</footer>
-</div>
+  <div id="backToTop">↑</div>
 
-<script>
-"use strict";
+  <script>
+    const container = document.getElementById('gamesContainer');
+    const search = document.getElementById('search');
+    const filterBtn = document.getElementById('filterPlatform');
+    const backToTop = document.getElementById('backToTop');
 
-/* --- CONFIG --- */
-const config = {
-  gamesJsonUrl: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
-  githubRepos: [
-    { user: "AlexBlackmore", repo: "roms", branch: "master", folders: ["gba","gbc","gb"] }
-  ],
-  acceptExtensions: [".gba",".gb",".gbc",".zip"],
-  logos: {
-    gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
-    gb:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
-    gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
-  }
-};
+    const biosLinks = {
+      gba: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin",
+      gbc: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin",
+      gb: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gb_bios.bin,https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
+    };
 
-/* BIOS links */
-const biosLinks = {
-  gba: ["https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin"],
-  gbc: ["https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin"],
-  gb: [
-    "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gb_bios.bin",
-    "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
-  ]
-};
+    const repoBase = "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master";
+    let currentPlatform = "gba";
+    let gamesList = [];
 
-/* --- DOM --- */
-const DOM = {
-  grid: document.getElementById("gameGrid"),
-  footer: document.getElementById("footer"),
-  search: document.getElementById("searchInput"),
-  filter: document.getElementById("filterPlatform")
-};
+    async function loadGames() {
+      container.textContent = "Caricamento giochi " + currentPlatform.toUpperCase() + "...";
+      try {
+        const res = await fetch(`${repoBase}/${currentPlatform}/`);
+        const text = await res.text();
+        const files = [...text.matchAll(/href="([^"]+\.(gba|gbc|gb))"/g)].map(x => x[1]);
 
-let allGames = [];
-let currentPlatform = "all";
+        gamesList = files.map(name => ({
+          name: decodeURIComponent(name.replace(/\.(gba|gbc|gb)$/, '')),
+          url: `${repoBase}/${currentPlatform}/${name}`
+        }));
 
-/* --- FUNZIONI UTILI --- */
-function slugify(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"_");}
-function detectSystemFromPath(path){
-  const p = path.toLowerCase();
-  if(p.includes("/gba/") || p.endsWith(".gba")) return "gba";
-  if(p.includes("/gbc/") || p.endsWith(".gbc")) return "gbc";
-  if(p.includes("/gb/")  || p.endsWith(".gb"))  return "gb";
-  return "gba";
-}
-
-/* --- FETCH --- */
-async function fetchGithubTree(user, repo, branch){
-  const apiUrl = `https://api.github.com/repos/${user}/${repo}/git/trees/${branch}?recursive=1`;
-  const r = await fetch(apiUrl);
-  const json = await r.json();
-  return json.tree || [];
-}
-
-async function loadAllGames(){
-  const all = [];
-  for(const info of config.githubRepos){
-    const tree = await fetchGithubTree(info.user, info.repo, info.branch);
-    for(const item of tree){
-      if(item.type !== "blob") continue;
-      if(!config.acceptExtensions.some(ext=>item.path.endsWith(ext))) continue;
-      const sys = detectSystemFromPath(item.path);
-      const title = item.path.split("/").pop().replace(/\.(gba|gbc|gb|zip)$/i,"").replace(/_/g," ");
-      all.push({
-        id: slugify(title+"_"+sys),
-        title,
-        system: sys,
-        url: `https://cdn.jsdelivr.net/gh/${info.user}/${info.repo}@${info.branch}/${item.path}`
-      });
+        renderGames();
+      } catch (err) {
+        container.textContent = "Errore nel caricamento.";
+        console.error(err);
+      }
     }
-  }
-  allGames = all.sort((a,b)=>a.title.localeCompare(b.title));
-  DOM.footer.textContent = `${allGames.length} giochi trovati`;
-  renderList(allGames);
-}
 
-/* --- RENDER --- */
-function getPlayURL(game){
-  const sys = game.system.toLowerCase();
-  const bios = biosLinks[sys] ? biosLinks[sys].join(",") : "";
-  return `play.html?rom=${encodeURIComponent(game.url)}&title=${encodeURIComponent(game.title)}&system=${sys}&bios=${encodeURIComponent(bios)}`;
-}
+    function renderGames() {
+      const q = search.value.toLowerCase();
+      const filtered = gamesList.filter(g => g.name.toLowerCase().includes(q));
 
-function renderList(list){
-  DOM.grid.innerHTML = list.map(g=>`
-    <article class="card">
-      <div class="thumb"><img src="${config.logos[g.system]}" alt=""></div>
-      <div class="title">${g.title}</div>
-      <div class="badge">${g.system.toUpperCase()}</div>
-      <a href="${getPlayURL(g)}" class="btn">▶ Gioca</a>
-    </article>
-  `).join("");
-}
+      container.innerHTML = filtered.map(g => `
+        <div class="game">
+          <img src="https://placehold.co/300x150/111/FFF?text=${encodeURIComponent(g.name.slice(0,20))}" alt="">
+          <h2>${g.name}</h2>
+          <a class="play-btn" href="play.html?rom=${encodeURIComponent(g.url)}&title=${encodeURIComponent(g.name)}&bios=${encodeURIComponent(biosLinks[currentPlatform])}">
+            ▶ Gioca
+          </a>
+        </div>
+      `).join('') || "<p>Nessun gioco trovato.</p>";
+    }
 
-/* --- FILTRO --- */
-function applyFilters(){
-  const q = DOM.search.value.trim().toLowerCase();
-  let list = allGames.slice();
-  if(currentPlatform !== "all"){
-    list = list.filter(g => g.system === currentPlatform);
-  }
-  if(q) list = list.filter(g => g.title.toLowerCase().includes(q));
-  renderList(list);
-  DOM.footer.textContent = `${list.length} / ${allGames.length} giochi`;
-}
+    // Filtraggio per piattaforma
+    filterBtn.addEventListener('click', () => {
+      if (currentPlatform === "gba") currentPlatform = "gbc";
+      else if (currentPlatform === "gbc") currentPlatform = "gb";
+      else currentPlatform = "gba";
+      filterBtn.textContent = currentPlatform.toUpperCase();
+      loadGames();
+    });
 
-/* --- EVENTI --- */
-DOM.search.addEventListener("input", applyFilters);
-DOM.filter.addEventListener("click", () => {
-  const next = currentPlatform === "all" ? "gba" : currentPlatform === "gba" ? "gbc" : currentPlatform === "gbc" ? "gb" : "all";
-  currentPlatform = next;
-  DOM.filter.textContent = (next === "all") ? "Tutti" : next.toUpperCase();
-  applyFilters();
-});
+    search.addEventListener('input', renderGames);
 
-/* --- INIT --- */
-loadAllGames();
-</script>
+    // Pulsante torna su
+    window.addEventListener('scroll', () => {
+      backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+
+    loadGames();
+  </script>
 </body>
 </html>
