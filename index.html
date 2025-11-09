@@ -1,263 +1,330 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MorsEmulatores</title>
-  <style>
-    body {
-      margin: 0;
-      background: #0a0f18;
-      color: #fff;
-      font-family: "Segoe UI", sans-serif;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MorsEmulatores</title>
+<style>
+  body {
+    background: #0b0e1a;
+    color: #d4eaff;
+    font-family: "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
 
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0, 20, 40, 0.9);
-      backdrop-filter: blur(8px);
-      padding: 10px 16px;
-      z-index: 1000;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
+  /* Navbar superiore */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(0, 25, 60, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 10px;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+  }
 
-    #search {
-      flex: 1;
-      margin-right: 10px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: none;
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      font-size: 15px;
-    }
+  nav input[type="text"] {
+    width: 45%;
+    max-width: 400px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-size: 15px;
+  }
 
-    #platformFilter {
-      display: flex;
-      gap: 6px;
-    }
+  nav button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #aad8ff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
 
-    .filter-btn {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      color: #9fc5ff;
-      padding: 8px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
+  nav button:hover, nav button.active {
+    background: #007bff;
+    color: #fff;
+  }
 
-    .filter-btn.active, .filter-btn:hover {
-      background: #0052cc;
-      color: #fff;
-    }
+  /* Griglia giochi */
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 20px;
+  }
 
-    main {
-      padding: 90px 20px 40px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 18px;
-    }
+  .game-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 10px;
+    transition: 0.3s;
+  }
 
-    .card {
-      background: #111a2b;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 0 8px rgba(0,0,0,0.4);
-      transition: transform 0.25s;
-    }
+  .game-card:hover {
+    transform: scale(1.05);
+    background: rgba(255,255,255,0.1);
+  }
 
-    .card:hover {
-      transform: scale(1.05);
-    }
+  .game-card img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #000;
+  }
 
-    .card img {
-      width: 100%;
-      height: 100px;
-      object-fit: contain;
-      background: #000;
-      padding: 6px;
-    }
+  .title {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #fff;
+    word-wrap: break-word;
+  }
 
-    .info {
-      padding: 8px 10px;
-    }
+  .arrow-up {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #003c80;
+    color: #cce7ff;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: none;
+    font-size: 22px;
+    transition: 0.3s;
+  }
 
-    .title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #cde1ff;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  .arrow-up:hover {
+    background: #0057c0;
+  }
 
-    .platform {
-      font-size: 12px;
-      color: #7da8d7;
-    }
+  /* Loader */
+  #loader {
+    position: fixed;
+    inset: 0;
+    background: #001122;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    color: #7fc6ff;
+    font-size: 18px;
+    font-weight: 500;
+    transition: opacity 1s ease;
+  }
 
-    #backTop {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #0052cc;
-      border: none;
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-      transition: 0.3s;
-      z-index: 999;
-    }
+  .progress-container {
+    width: 70%;
+    max-width: 400px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
 
-    #backTop:hover {
-      transform: scale(1.1);
-      background: #007bff;
-    }
-  </style>
+  .progress-bar {
+    width: 0%;
+    height: 10px;
+    background: linear-gradient(90deg, #007bff, #00bfff);
+    border-radius: 10px;
+    transition: width 0.3s;
+  }
+
+  #errorBox {
+    color: #ff9e9e;
+    background: rgba(255, 0, 0, 0.08);
+    border: 1px solid rgba(255, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px auto;
+    width: 90%;
+    max-width: 600px;
+    display: none;
+  }
+</style>
 </head>
 <body>
-<header>
-  <input id="search" type="text" placeholder="Cerca un gioco..." />
-  <div id="platformFilter">
-    <button class="filter-btn active" data-system="all">Tutti</button>
-    <button class="filter-btn" data-system="gb">GB</button>
-    <button class="filter-btn" data-system="gbc">GBC</button>
-    <button class="filter-btn" data-system="gba">GBA</button>
+  <div id="loader">
+    <div>Caricamento giochi...</div>
+    <div class="progress-container"><div class="progress-bar"></div></div>
+    <div id="progress-text">0%</div>
   </div>
-</header>
 
-<main id="gameList"></main>
-<button id="backTop">↑</button>
+  <nav>
+    <input type="text" id="search" placeholder="Cerca gioco...">
+    <button data-filter="all" class="active">Tutti</button>
+    <button data-filter="gba">GBA</button>
+    <button data-filter="gbc">GBC</button>
+    <button data-filter="gb">GB</button>
+  </nav>
 
-<script>
-const list = document.getElementById("gameList");
-const search = document.getElementById("search");
-const backTop = document.getElementById("backTop");
+  <div id="errorBox"></div>
+  <div class="game-grid" id="gameList"></div>
+  <button class="arrow-up" id="arrowUp">↑</button>
 
-const logos = {
-  gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
-  gb:  "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
-  gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
-};
+  <script>
+    const logos = {
+      gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
+      gb: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
+      gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
+    };
 
-const sources = [
-  "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
-  "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gb/?meta",
-  "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gbc/?meta",
-  "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gba/?meta"
-];
+    const gameList = document.getElementById("gameList");
+    const loader = document.getElementById("loader");
+    const bar = document.querySelector(".progress-bar");
+    const text = document.getElementById("progress-text");
+    const errorBox = document.getElementById("errorBox");
 
-let allGames = [];
-let currentFilter = "all";
+    const sources = [
+      { url: "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json", type: "custom" },
+      { url: "https://api.github.com/repos/AlexBlackmore/roms/contents/gba", type: "github", system: "gba" },
+      { url: "https://api.github.com/repos/AlexBlackmore/roms/contents/gb", type: "github", system: "gb" },
+      { url: "https://api.github.com/repos/AlexBlackmore/roms/contents/gbc", type: "github", system: "gbc" }
+    ];
 
-async function loadSource(url) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(res.status);
-    const data = await res.json();
-
-    if (Array.isArray(data)) {
-      // games.json locale
-      return data.map(g => ({
-        name: g.name,
-        url: g.url,
-        platform: g.platform.toLowerCase(),
-        image: logos[g.platform.toLowerCase()] || ""
-      }));
+    async function fetchSafe(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.warn(`⚠️ Errore HTTP ${res.status} su ${url}`);
+          return { error: `HTTP ${res.status}`, data: null };
+        }
+        return { data: await res.json(), error: null };
+      } catch (e) {
+        console.warn(`⚠️ Errore rete/CORS per ${url}:`, e);
+        return { error: e.message, data: null };
+      }
     }
 
-    if (Array.isArray(data.files)) {
-      // jsDelivr ?meta
-      const sys = url.includes("/gba") ? "gba" : url.includes("/gbc") ? "gbc" : "gb";
-      return data.files
-        .filter(f => /\.(gba|gbc|gb|zip)$/i.test(f.name) && /Europe|EUR/i.test(f.name))
-        .map(f => ({
-          name: f.name.replace(/\.(gba|gbc|gb|zip)$/i, ""),
-          url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${sys}/${f.name}`,
-          platform: sys,
-          image: logos[sys]
-        }));
+    async function fetchAll() {
+      let allGames = [];
+      let count = 0;
+      let errors = [];
+
+      for (const src of sources) {
+        const { data, error } = await fetchSafe(src.url);
+        if (error) errors.push(`❌ ${src.url}: ${error}`);
+
+        if (data) {
+          // Gestione games.json personalizzato
+          if (src.type === "custom" && Array.isArray(data)) {
+            data.forEach(g => {
+              if (g.title && g.url && g.system) {
+                allGames.push({
+                  name: g.title,
+                  url: g.url,
+                  platform: g.system,
+                  image: logos[g.system]
+                });
+              }
+            });
+          }
+          // Gestione repository GitHub
+          else if (src.type === "github" && Array.isArray(data)) {
+            data.forEach(g => {
+              if (g.name && g.name.match(/\.(gba|gbc|gb|zip)$/i)) {
+                // Filtra solo giochi europei
+                if (g.name.includes("(Europe)") || g.name.includes("(EUR)")) {
+                  allGames.push({
+                    name: g.name.replace(/\.(gba|gbc|gb|zip)$/i, ""),
+                    url: g.download_url || `https://raw.githubusercontent.com/AlexBlackmore/roms/master/${src.system}/${g.name}`,
+                    platform: src.system,
+                    image: logos[src.system]
+                  });
+                }
+              }
+            });
+          }
+        }
+
+        count++;
+        const percent = Math.round((count / sources.length) * 100);
+        bar.style.width = percent + "%";
+        text.textContent = percent + "%";
+      }
+
+      if (errors.length) {
+        errorBox.innerHTML = "<b>⚠️ Problemi rilevati:</b><br>" + errors.join("<br>");
+        errorBox.style.display = "block";
+      }
+
+      allGames = allGames.sort(() => Math.random() - 0.5); // mescola
+      allGames = allGames.filter((v,i,a)=>a.findIndex(t=>t.name===v.name)===i);
+      return allGames;
     }
-  } catch (err) {
-    console.warn("Errore sorgente", url, err);
-    return [];
-  }
-  return [];
-}
 
-function renderGames(games) {
-  list.innerHTML = "";
-  if (!games.length) {
-    list.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:#7da8d7;'>Nessun gioco trovato.</p>";
-    return;
-  }
+    function renderGames(list) {
+      gameList.innerHTML = list.map(g => `
+        <div class="game-card" data-platform="${g.platform}">
+          <img src="${g.image}">
+          <div class="title">${g.name}</div>
+          <button onclick="play('${g.url}','${encodeURIComponent(g.name)}','${g.platform}')"
+            style="margin-top:8px;padding:6px 12px;border:none;border-radius:8px;background:#004a88;color:#fff;cursor:pointer;">Play</button>
+        </div>`).join('');
+    }
 
-  for (const g of games) {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <img src="${g.image}" alt="${g.name}">
-      <div class="info">
-        <div class="title">${g.name}</div>
-        <div class="platform">${g.platform.toUpperCase()}</div>
-      </div>`;
-    card.addEventListener("click", () => {
-      window.location.href = `play.html?rom=${encodeURIComponent(g.url)}&title=${encodeURIComponent(g.name)}&system=${g.platform}`;
+    async function init() {
+      const allGames = await fetchAll();
+      loader.style.opacity = 0;
+      setTimeout(()=>loader.style.display="none",1000);
+      renderGames(allGames);
+      setupNavbar(allGames);
+    }
+
+    function setupNavbar(allGames) {
+      const search = document.getElementById("search");
+      const buttons = document.querySelectorAll("nav button");
+      let currentFilter = "all";
+
+      function update() {
+        const q = search.value.toLowerCase();
+        let filtered = allGames.filter(g => g.name.toLowerCase().includes(q));
+        if (currentFilter !== "all") {
+          filtered = filtered.filter(g => g.platform === currentFilter);
+        }
+        renderGames(filtered);
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          buttons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentFilter = btn.dataset.filter;
+          update();
+        });
+      });
+
+      search.addEventListener("input", update);
+      update();
+    }
+
+    function play(url, title, system) {
+      const biosMap = {
+        gba: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin",
+        gbc: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin",
+        gb: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
+      };
+      location.href = `play.html?rom=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&system=${system}&bios=${encodeURIComponent(biosMap[system])}`;
+    }
+
+    const arrow = document.getElementById("arrowUp");
+    window.addEventListener("scroll", () => {
+      arrow.style.display = window.scrollY > 200 ? "block" : "none";
     });
-    list.appendChild(card);
-  }
-}
+    arrow.addEventListener("click", ()=>window.scrollTo({top:0,behavior:'smooth'}));
 
-function filterAndRender() {
-  const q = search.value.toLowerCase();
-  let filtered = allGames.filter(g =>
-    g.name.toLowerCase().includes(q) &&
-    (currentFilter === "all" || g.platform === currentFilter)
-  );
-  renderGames(filtered);
-}
-
-search.addEventListener("input", filterAndRender);
-
-document.querySelectorAll(".filter-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    currentFilter = btn.dataset.system;
-    filterAndRender();
-  });
-});
-
-window.addEventListener("scroll", () => {
-  backTop.style.display = window.scrollY > 300 ? "block" : "none";
-});
-backTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
-
-(async function init() {
-  for (const src of sources) {
-    const games = await loadSource(src);
-    allGames.push(...games);
-  }
-  // rimuovi duplicati
-  const seen = new Set();
-  allGames = allGames.filter(g => {
-    const key = g.name + g.platform;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-  filterAndRender();
-})();
-</script>
+    init();
+  </script>
 </body>
 </html>
