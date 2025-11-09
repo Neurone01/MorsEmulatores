@@ -238,7 +238,7 @@
                 if (g.name.includes("(Europe)") || g.name.includes("(EUR)")) {
                   allGames.push({
                     name: g.name.replace(/\.(gba|gbc|gb|zip)$/i, ""),
-                    url: g.download_url || `https://raw.githubusercontent.com/AlexBlackmore/roms/master/${src.system}/${g.name}`,
+                    url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${src.system}/${g.name}`,
                     platform: src.system,
                     image: logos[src.system]
                   });
