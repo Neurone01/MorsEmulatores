@@ -1,286 +1,284 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>MorsEmulatores</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, #0b0c10, #0d1117);
-      color: #d1e0f0;
-      overflow-x: hidden;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MorsEmulatores</title>
+<style>
+  body {
+    background: #0a0a0a;
+    color: #cce7ff;
+    font-family: "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
 
-    header {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      background: rgba(10, 10, 15, 0.85);
-      backdrop-filter: blur(10px);
-      padding: 10px 0;
-      text-align: center;
-      z-index: 1000;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    }
+  header {
+    position: sticky;
+    top: 0;
+    background: rgba(0, 15, 35, 0.95);
+    padding: 10px;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+  }
 
-    h1 {
-      margin: 6px 0;
-      font-size: 22px;
-      color: #58a6ff;
-    }
+  input[type="text"] {
+    width: 80%;
+    max-width: 400px;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 16px;
+  }
 
-    #search {
-      width: 60%;
-      max-width: 400px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      font-size: 14px;
-    }
+  #filterPlatform {
+    background: rgba(255,255,255,0.08);
+    border: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #9fb0c0;
+    cursor: pointer;
+    transition: 0.3s;
+  }
 
-    #filterPlatform {
-      background: rgba(255,255,255,0.08);
-      border: 0;
-      padding: 10px 12px;
-      border-radius: 8px;
-      color: #9fb0c0;
-      cursor: pointer;
-      margin-top: 10px;
-      font-size: 14px;
-    }
+  #filterPlatform:hover {
+    background: rgba(255,255,255,0.15);
+  }
 
-    main {
-      margin-top: 140px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 20px;
+  }
 
-    .game {
-      background: rgba(255,255,255,0.05);
-      border-radius: 15px;
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
+  .game-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 10px;
+    transition: 0.3s;
+  }
 
-    .game:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 0 18px rgba(0,0,0,0.7);
-    }
+  .game-card:hover {
+    transform: scale(1.05);
+    background: rgba(255,255,255,0.1);
+  }
 
-    .game img {
-      width: 100%;
-      height: 150px;
-      object-fit: contain;
-      background: #000;
-    }
+  .game-card img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #000;
+  }
 
-    .game h2 {
-      font-size: 15px;
-      text-align: center;
-      color: #dce6f0;
-      padding: 10px;
-      margin: 0;
-      height: 60px;
-    }
+  .title {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #fff;
+    word-wrap: break-word;
+  }
 
-    .play-btn {
-      display: block;
-      text-align: center;
-      background: #238636;
-      color: #fff;
-      padding: 10px;
-      font-weight: bold;
-      text-decoration: none;
-      border-radius: 0 0 15px 15px;
-    }
+  .arrow-up {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #002b55;
+    color: #cce7ff;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: none;
+    font-size: 22px;
+    transition: 0.3s;
+  }
 
-    .play-btn:hover {
-      background: #2ea043;
-    }
+  .arrow-up:hover {
+    background: #004a88;
+  }
 
-    #backToTop {
-      position: fixed;
-      bottom: 25px;
-      right: 25px;
-      background: rgba(30, 30, 30, 0.85);
-      color: #00aaff;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      text-align: center;
-      line-height: 40px;
-      cursor: pointer;
-      display: none;
-      font-size: 22px;
-      z-index: 1000;
-      transition: all 0.3s ease;
-    }
+  /* Loader */
+  #loader {
+    position: fixed;
+    inset: 0;
+    background: #001122;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    color: #7fc6ff;
+    font-size: 18px;
+    font-weight: 500;
+    transition: opacity 1s ease;
+  }
 
-    #backToTop:hover {
-      background: rgba(50,50,50,0.9);
-      transform: scale(1.1);
-    }
+  .progress-container {
+    width: 70%;
+    max-width: 400px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
 
-    /* 🔹 Loader animato */
-    #loader {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: #0b0c10;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      transition: opacity 0.8s ease, visibility 0.8s ease;
-    }
+  .progress-bar {
+    width: 0%;
+    height: 10px;
+    background: linear-gradient(90deg, #007bff, #00bfff);
+    border-radius: 10px;
+    transition: width 0.3s;
+  }
 
-    #loader.hidden {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    .spinner {
-      border: 6px solid rgba(255,255,255,0.1);
-      border-top: 6px solid #58a6ff;
-      border-radius: 50%;
-      width: 70px;
-      height: 70px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    #loader p {
-      color: #58a6ff;
-      font-size: 16px;
-      letter-spacing: 1px;
-    }
-
-  </style>
+</style>
 </head>
 <body>
   <div id="loader">
-    <div class="spinner"></div>
-    <p>Caricamento giochi...</p>
+    <div>Caricamento giochi...</div>
+    <div class="progress-container"><div class="progress-bar"></div></div>
+    <div id="progress-text">0%</div>
   </div>
 
   <header>
-    <h1>MorsEmulatores</h1>
-    <input type="text" id="search" placeholder="🔍 Cerca un gioco...">
+    <input type="text" id="search" placeholder="Cerca gioco...">
     <br>
-    <button id="filterPlatform">Tutti</button>
+    <button id="filterPlatform">GBA</button>
   </header>
 
-  <main id="gamesContainer">Caricamento...</main>
-  <div id="backToTop">↑</div>
+  <div class="game-grid" id="gameList"></div>
+  <button class="arrow-up" id="arrowUp">↑</button>
 
   <script>
-    const container = document.getElementById('gamesContainer');
-    const search = document.getElementById('search');
-    const filterBtn = document.getElementById('filterPlatform');
-    const backToTop = document.getElementById('backToTop');
-    const loader = document.getElementById('loader');
-
-    const biosLinks = {
-      gba: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin",
-      gbc: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin",
-      gb: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gb_bios.bin,https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
-    };
-
     const logos = {
       gba: "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
       gb: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Nintendo_Game_Boy_Logo.svg",
       gbc: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Game_Boy_Color_logo.svg"
     };
 
-    let allGames = [];
-    let currentFilter = "all";
+    const gameList = document.getElementById("gameList");
+    const loader = document.getElementById("loader");
+    const bar = document.querySelector(".progress-bar");
+    const text = document.getElementById("progress-text");
 
-    async function loadAllGames() {
-      try {
-        // Carica dal tuo games.json
-        const jsonRes = await fetch("https://raw.githubusercontent.com/Neurone01/MorsEmulatores/main/games.json");
-        const jsonGames = await jsonRes.json();
+    const sources = [
+      "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
+      "https://api.github.com/repos/AlexBlackmore/roms/contents/gba",
+      "https://api.github.com/repos/AlexBlackmore/roms/contents/gb",
+      "https://api.github.com/repos/AlexBlackmore/roms/contents/gbc"
+    ];
 
-        // Simulazione di giochi GitHub
-        const githubGames = [
-          { name: "Ace Combat Advance (USA, Europe)", platform: "gba", url: "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gba/Ace%20Combat%20Advance%20(USA%2C%20Europe).gba" },
-          { name: "Pokémon Red (Europe)", platform: "gb", url: "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gb/Pokemon%20Red%20(Europe).gb" },
-          { name: "Zelda Oracle of Seasons (Europe)", platform: "gbc", url: "https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/gbc/Zelda%20Oracle%20of%20Seasons%20(Europe).gbc" }
-        ];
+    async function fetchAll() {
+      let allGames = [];
+      let count = 0;
 
-        allGames = [...jsonGames, ...githubGames].map(g => ({
-          id: g.id || g.name.toLowerCase().replace(/\s+/g, "_"),
-          name: g.name,
-          platform: g.platform || detectPlatform(g.url),
-          image: logos[g.platform] || logos[detectPlatform(g.url)],
-          url: g.url
-        }));
+      for (const src of sources) {
+        try {
+          const res = await fetch(src);
+          const data = await res.json();
 
-        renderGames();
-      } catch (err) {
-        console.error(err);
-        container.textContent = "Errore nel caricamento dei giochi.";
-      } finally {
-        loader.classList.add("hidden");
+          if (Array.isArray(data)) {
+            data.forEach(g => {
+              if (g.name && (g.name.includes("(Europe)") || g.name.includes("(EUR)"))) {
+                const system = src.includes("/gba") ? "gba" : src.includes("/gbc") ? "gbc" : src.includes("/gb") ? "gb" : (g.platform || "gba");
+                allGames.push({
+                  name: g.name.replace(".gba","").replace(".gbc","").replace(".gb",""),
+                  url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${system}/${g.name}`,
+                  platform: system,
+                  image: logos[system]
+                });
+              }
+            });
+          } else {
+            // games.json
+            data.forEach(g => {
+              const system = g.platform.toLowerCase();
+              allGames.push({
+                name: g.name,
+                url: g.url,
+                platform: system,
+                image: logos[system]
+              });
+            });
+          }
+
+          count++;
+          const percent = Math.round((count / sources.length) * 100);
+          bar.style.width = percent + "%";
+          text.textContent = percent + "%";
+        } catch (e) {
+          console.error("Errore nel fetch:", e);
+        }
       }
+
+      // rimuovi duplicati
+      allGames = allGames.filter((v,i,a)=>a.findIndex(t=>(t.name===v.name))===i);
+      return allGames;
     }
 
-    function detectPlatform(url) {
-      if (url.endsWith(".gba")) return "gba";
-      if (url.endsWith(".gbc")) return "gbc";
-      if (url.endsWith(".gb")) return "gb";
-      return "gba";
+    function renderGames(list) {
+      gameList.innerHTML = list.map(g => `
+        <div class="game-card" data-platform="${g.platform}">
+          <img src="${g.image}">
+          <div class="title">${g.name}</div>
+          <button onclick="play('${g.url}','${encodeURIComponent(g.name)}','${g.platform}')"
+            style="margin-top:8px;padding:6px 12px;border:none;border-radius:8px;background:#004a88;color:#fff;cursor:pointer;">Play</button>
+        </div>`).join('');
     }
 
-    function renderGames() {
-      const q = search.value.toLowerCase();
-      const filtered = allGames.filter(g =>
-        (currentFilter === "all" || g.platform === currentFilter) &&
-        g.name.toLowerCase().includes(q)
-      );
-
-      container.innerHTML = filtered.map(g => `
-        <div class="game">
-          <img src="${g.image}" alt="${g.platform}">
-          <h2>${g.name}</h2>
-          <a class="play-btn" href="play.html?rom=${encodeURIComponent(g.url)}&title=${encodeURIComponent(g.name)}&system=${g.platform}&bios=${encodeURIComponent(biosLinks[g.platform])}">
-            ▶ Gioca
-          </a>
-        </div>
-      `).join('') || "<p>Nessun gioco trovato.</p>";
+    async function init() {
+      const allGames = await fetchAll();
+      loader.style.opacity = 0;
+      setTimeout(()=>loader.style.display="none",1000);
+      renderGames(allGames);
+      setupSearchAndFilters(allGames);
     }
 
-    filterBtn.addEventListener('click', () => {
-      if (currentFilter === "all") currentFilter = "gba";
-      else if (currentFilter === "gba") currentFilter = "gbc";
-      else if (currentFilter === "gbc") currentFilter = "gb";
-      else currentFilter = "all";
-      filterBtn.textContent = currentFilter === "all" ? "Tutti" : currentFilter.toUpperCase();
-      renderGames();
+    function setupSearchAndFilters(allGames) {
+      const search = document.getElementById("search");
+      const filterBtn = document.getElementById("filterPlatform");
+      let currentPlatform = "gba";
+
+      function update() {
+        const q = search.value.toLowerCase();
+        const filtered = allGames.filter(g =>
+          g.platform === currentPlatform && g.name.toLowerCase().includes(q)
+        );
+        renderGames(filtered);
+      }
+
+      search.addEventListener("input", update);
+
+      filterBtn.addEventListener("click", () => {
+        currentPlatform = currentPlatform === "gba" ? "gbc" : currentPlatform === "gbc" ? "gb" : "gba";
+        filterBtn.textContent = currentPlatform.toUpperCase();
+        update();
+      });
+
+      update();
+    }
+
+    function play(url, title, system) {
+      const biosMap = {
+        gba: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin",
+        gbc: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin",
+        gb: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin"
+      };
+      location.href = `play.html?rom=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&system=${system}&bios=${encodeURIComponent(biosMap[system])}`;
+    }
+
+    const arrow = document.getElementById("arrowUp");
+    window.addEventListener("scroll", () => {
+      arrow.style.display = window.scrollY > 200 ? "block" : "none";
     });
+    arrow.addEventListener("click", ()=>window.scrollTo({top:0,behavior:'smooth'}));
 
-    search.addEventListener('input', renderGames);
-
-    window.addEventListener('scroll', () => {
-      backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
-    });
-    backToTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
-
-    loadAllGames();
+    init();
   </script>
 </body>
 </html>
