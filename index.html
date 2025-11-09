@@ -232,19 +232,29 @@
           }
           // Gestione repository GitHub
           else if (src.type === "github" && Array.isArray(data)) {
+            console.log(`📦 Trovati ${data.length} file totali per ${src.system}`);
+            let addedCount = 0;
             data.forEach(g => {
               if (g.name && g.name.match(/\.(gba|gbc|gb|zip)$/i)) {
-                // Filtra solo giochi europei
-                if (g.name.includes("(Europe)") || g.name.includes("(EUR)")) {
+                // Filtra solo giochi europei - pattern più specifici
+                const isEuropean = g.name.includes("(Europe)") || 
+                                   g.name.includes("(EUR)") || 
+                                   g.name.match(/\(E\)/i) ||
+                                   g.name.match(/\(.*Europe.*\)/i);
+                
+                if (isEuropean) {
+                  console.log(`✅ ${src.system}: ${g.name}`);
+                  addedCount++;
                   allGames.push({
                     name: g.name.replace(/\.(gba|gbc|gb|zip)$/i, ""),
-                    url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${src.system}/${g.name}`,
+                    url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${src.system}/${encodeURIComponent(g.name)}`,
                     platform: src.system,
                     image: logos[src.system]
                   });
                 }
               }
             });
+            console.log(`✔️ ${src.system}: ${addedCount} giochi europei aggiunti su ${data.length} totali`);
           }
         }
 
@@ -253,6 +263,9 @@
         bar.style.width = percent + "%";
         text.textContent = percent + "%";
       }
+
+      console.log(`🎮 Totale giochi caricati: ${allGames.length}`);
+      console.log(`📊 GBA: ${allGames.filter(g=>g.platform==='gba').length}, GB: ${allGames.filter(g=>g.platform==='gb').length}, GBC: ${allGames.filter(g=>g.platform==='gbc').length}`);
 
       if (errors.length) {
         errorBox.innerHTML = "<b>⚠️ Problemi rilevati:</b><br>" + errors.join("<br>");
