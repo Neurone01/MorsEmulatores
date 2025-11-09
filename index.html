@@ -6,49 +6,54 @@
 <title>MorsEmulatores</title>
 <style>
   body {
-    background: #0a0a0a;
-    color: #cce7ff;
+    background: #0b0e1a;
+    color: #d4eaff;
     font-family: "Segoe UI", sans-serif;
     margin: 0;
     padding: 0;
-    text-align: center;
   }
 
-  header {
+  /* Navbar superiore */
+  nav {
     position: sticky;
     top: 0;
-    background: rgba(0, 15, 35, 0.95);
-    padding: 10px;
     z-index: 10;
+    background: rgba(0, 25, 60, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 10px;
+    gap: 12px;
     backdrop-filter: blur(10px);
   }
 
-  input[type="text"] {
-    width: 80%;
+  nav input[type="text"] {
+    width: 45%;
     max-width: 400px;
     padding: 10px;
-    margin: 10px;
     border-radius: 8px;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255,255,255,0.1);
     color: #fff;
-    font-size: 16px;
+    font-size: 15px;
   }
 
-  #filterPlatform {
-    background: rgba(255,255,255,0.08);
-    border: 0;
-    padding: 10px 12px;
+  nav button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #aad8ff;
+    padding: 8px 14px;
     border-radius: 8px;
-    color: #9fb0c0;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.2s ease;
   }
 
-  #filterPlatform:hover {
-    background: rgba(255,255,255,0.15);
+  nav button:hover, nav button.active {
+    background: #007bff;
+    color: #fff;
   }
 
+  /* Griglia giochi */
   .game-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -87,7 +92,7 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: #002b55;
+    background: #003c80;
     color: #cce7ff;
     border: none;
     border-radius: 50%;
@@ -100,7 +105,7 @@
   }
 
   .arrow-up:hover {
-    background: #004a88;
+    background: #0057c0;
   }
 
   /* Loader */
@@ -136,6 +141,17 @@
     transition: width 0.3s;
   }
 
+  #errorBox {
+    color: #ff9e9e;
+    background: rgba(255, 0, 0, 0.08);
+    border: 1px solid rgba(255, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px auto;
+    width: 90%;
+    max-width: 600px;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -145,12 +161,15 @@
     <div id="progress-text">0%</div>
   </div>
 
-  <header>
+  <nav>
     <input type="text" id="search" placeholder="Cerca gioco...">
-    <br>
-    <button id="filterPlatform">GBA</button>
-  </header>
+    <button data-filter="all" class="active">Tutti</button>
+    <button data-filter="gba">GBA</button>
+    <button data-filter="gbc">GBC</button>
+    <button data-filter="gb">GB</button>
+  </nav>
 
+  <div id="errorBox"></div>
   <div class="game-grid" id="gameList"></div>
   <button class="arrow-up" id="arrowUp">↑</button>
 
@@ -165,6 +184,7 @@
     const loader = document.getElementById("loader");
     const bar = document.querySelector(".progress-bar");
     const text = document.getElementById("progress-text");
+    const errorBox = document.getElementById("errorBox");
 
     const sources = [
       "https://raw.githubusercontent.com/Neurone01/MorsEmulatores/refs/heads/main/games.json",
@@ -173,51 +193,56 @@
       "https://api.github.com/repos/AlexBlackmore/roms/contents/gbc"
     ];
 
+    async function fetchSafe(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.warn(`⚠️ Errore HTTP ${res.status} su ${url}`);
+          return { error: `HTTP ${res.status}`, data: null };
+        }
+        return { data: await res.json(), error: null };
+      } catch (e) {
+        console.warn(`⚠️ Errore rete/CORS per ${url}:`, e);
+        return { error: e.message, data: null };
+      }
+    }
+
     async function fetchAll() {
       let allGames = [];
       let count = 0;
+      let errors = [];
 
       for (const src of sources) {
-        try {
-          const res = await fetch(src);
-          const data = await res.json();
+        const { data, error } = await fetchSafe(src);
+        if (error) errors.push(`❌ ${src}: ${error}`);
 
-          if (Array.isArray(data)) {
-            data.forEach(g => {
-              if (g.name && (g.name.includes("(Europe)") || g.name.includes("(EUR)"))) {
-                const system = src.includes("/gba") ? "gba" : src.includes("/gbc") ? "gbc" : src.includes("/gb") ? "gb" : (g.platform || "gba");
-                allGames.push({
-                  name: g.name.replace(".gba","").replace(".gbc","").replace(".gb",""),
-                  url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${system}/${g.name}`,
-                  platform: system,
-                  image: logos[system]
-                });
-              }
-            });
-          } else {
-            // games.json
-            data.forEach(g => {
-              const system = g.platform.toLowerCase();
+        if (Array.isArray(data)) {
+          data.forEach(g => {
+            if (g.name && (g.name.includes("(Europe)") || g.name.includes("(EUR)"))) {
+              const system = src.includes("/gba") ? "gba" : src.includes("/gbc") ? "gbc" : src.includes("/gb") ? "gb" : "gba";
               allGames.push({
-                name: g.name,
-                url: g.url,
+                name: g.name.replace(/\.(gba|gbc|gb)$/i,""),
+                url: `https://cdn.jsdelivr.net/gh/AlexBlackmore/roms@master/${system}/${g.name}`,
                 platform: system,
                 image: logos[system]
               });
-            });
-          }
-
-          count++;
-          const percent = Math.round((count / sources.length) * 100);
-          bar.style.width = percent + "%";
-          text.textContent = percent + "%";
-        } catch (e) {
-          console.error("Errore nel fetch:", e);
+            }
+          });
         }
+
+        count++;
+        const percent = Math.round((count / sources.length) * 100);
+        bar.style.width = percent + "%";
+        text.textContent = percent + "%";
       }
 
-      // rimuovi duplicati
-      allGames = allGames.filter((v,i,a)=>a.findIndex(t=>(t.name===v.name))===i);
+      if (errors.length) {
+        errorBox.innerHTML = "<b>⚠️ Problemi rilevati:</b><br>" + errors.join("<br>");
+        errorBox.style.display = "block";
+      }
+
+      allGames = allGames.sort(() => Math.random() - 0.5); // mescola
+      allGames = allGames.filter((v,i,a)=>a.findIndex(t=>t.name===v.name)===i);
       return allGames;
     }
 
@@ -236,30 +261,33 @@
       loader.style.opacity = 0;
       setTimeout(()=>loader.style.display="none",1000);
       renderGames(allGames);
-      setupSearchAndFilters(allGames);
+      setupNavbar(allGames);
     }
 
-    function setupSearchAndFilters(allGames) {
+    function setupNavbar(allGames) {
       const search = document.getElementById("search");
-      const filterBtn = document.getElementById("filterPlatform");
-      let currentPlatform = "gba";
+      const buttons = document.querySelectorAll("nav button");
+      let currentFilter = "all";
 
       function update() {
         const q = search.value.toLowerCase();
-        const filtered = allGames.filter(g =>
-          g.platform === currentPlatform && g.name.toLowerCase().includes(q)
-        );
+        let filtered = allGames.filter(g => g.name.toLowerCase().includes(q));
+        if (currentFilter !== "all") {
+          filtered = filtered.filter(g => g.platform === currentFilter);
+        }
         renderGames(filtered);
       }
 
-      search.addEventListener("input", update);
-
-      filterBtn.addEventListener("click", () => {
-        currentPlatform = currentPlatform === "gba" ? "gbc" : currentPlatform === "gbc" ? "gb" : "gba";
-        filterBtn.textContent = currentPlatform.toUpperCase();
-        update();
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          buttons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentFilter = btn.dataset.filter;
+          update();
+        });
       });
 
+      search.addEventListener("input", update);
       update();
     }
 
