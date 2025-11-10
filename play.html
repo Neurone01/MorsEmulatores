@@ -104,6 +104,20 @@ window.Module = {
   onRuntimeInitialized: function() {
     console.log("✅ Runtime pronto");
     
+    // Intercetta FS.syncfs per monitorare i salvataggi
+    if (typeof FS !== 'undefined' && FS.syncfs) {
+      const originalSyncfs = FS.syncfs;
+      FS.syncfs = function(populate, callback) {
+        console.log("💾 Sincronizzazione filesystem...");
+        originalSyncfs.call(FS, populate, function(err) {
+          if (!err && !populate) {
+            console.log("✅ Salvataggio sincronizzato con IndexedDB");
+          }
+          if (callback) callback(err);
+        });
+      };
+    }
+    
     // Aspetta che /offline sia montato e poi inietta BIOS
     const injectBIOS = () => {
       if (!window.PRELOADED_BIOS || typeof FS === 'undefined') return;
@@ -132,7 +146,13 @@ window.Module = {
     setTimeout(injectBIOS, 100);
   },
   printErr: function(text) {
-    if (!text.includes('warning') && !text.includes('Uncaught')) {
+    // Cattura i messaggi di salvataggio di SkyEmu
+    if (text.includes('Saved:')) {
+      const match = text.match(/Saved: (.+?) \(size: (\d+)\)/);
+      if (match) {
+        console.log(`💾 Salvataggio creato: ${match[1]} (${match[2]} bytes)`);
+      }
+    } else if (!text.includes('warning') && !text.includes('Uncaught')) {
       console.error("SkyEmu:", text);
     }
   }
