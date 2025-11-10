@@ -34,81 +34,124 @@
       border-radius: 8px;
       z-index: 5;
     }
-
-    #back {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(30, 30, 30, 0.8);
-      color: #00aaff;
-      padding: 10px 16px;
-      border-radius: 12px;
-      font-family: sans-serif;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      z-index: 10;
-      box-shadow: 0 0 10px #000;
-    }
-
-    #back:hover {
-      background: rgba(50, 50, 50, 0.9);
-      transform: scale(1.05);
-    }
   </style>
 </head>
 <body>
 
-<div id="status">Caricamento gioco...</div>
+<div id="status">Caricamento...</div>
 
 <canvas id="canvas" class="emscripten"></canvas>
 <input id="fileInput0" type="file" style="display:none">
 
-<!-- Core emulatore -->
-<script src="https://web.skyemu.app/SkyEmu.js"></script>
-
+<!-- Pre-carica BIOS e configura Module -->
 <script>
 "use strict";
 
 const params = new URLSearchParams(location.search);
 const romURL = decodeURIComponent(params.get("rom"));
 const title = decodeURIComponent(params.get("title") || "Gioco");
-const biosParam = decodeURIComponent(params.get("bios") || "");
+const system = params.get("system") || "gba";
 const STATUS = document.getElementById("status");
+
+const biosMap = {
+  gba: {
+    url: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gba_bios.bin",
+    path: "/offline/gba_bios.bin"
+  },
+  gbc: {
+    url: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/gbc_bios.bin",
+    path: "/offline/gbc_bios.bin"
+  },
+  gb: {
+    url: "https://cdn.jsdelivr.net/gh/Neurone01/MorsEmulatores@main/Bios/dmg0_rom.bin",
+    path: "/offline/dmg_boot.bin"
+  }
+};
 
 function setStatus(msg) {
   STATUS.textContent = msg;
-  console.log(msg);
-}
-
-function exitToLibrary() {
-  if (document.fullscreenElement) document.exitFullscreen();
-  window.location.href = "index.html";
-}
-
-function waitForModule(timeout = 8000) {
-  return new Promise((resolve) => {
-    if (window.Module) return resolve(Module);
-    const start = Date.now();
-    const iv = setInterval(() => {
-      if (window.Module) {
-        clearInterval(iv);
-        resolve(Module);
-      }
-      if (Date.now() - start > timeout) {
-        clearInterval(iv);
-        resolve(null);
-      }
-    }, 100);
-  });
+  console.log("📢", msg);
 }
 
 async function fetchBinary(url) {
   const res = await fetch(url, { mode: "cors" });
-  if (!res.ok) throw new Error("Download fallito: " + res.status);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return new Uint8Array(await res.arrayBuffer());
 }
 
+// PRE-CARICA IL BIOS PRIMA DI SKYEMU.JS
+(async function() {
+  try {
+    setStatus("Pre-caricamento BIOS...");
+    const biosInfo = biosMap[system];
+    if (biosInfo) {
+      const biosData = await fetchBinary(biosInfo.url);
+      window.PRELOADED_BIOS = {
+        data: biosData,
+        path: biosInfo.path
+      };
+      console.log(`✅ BIOS pre-caricato: ${biosData.length} bytes`);
+    }
+  } catch (err) {
+    console.warn("⚠️ Errore BIOS:", err);
+  }
+})();
+
+// Configura Module
+window.Module = {
+  preRun: [],
+  postRun: [],
+  onRuntimeInitialized: function() {
+    console.log("✅ Runtime pronto");
+    
+    // Aspetta che /offline sia montato e poi inietta BIOS
+    const injectBIOS = () => {
+      if (!window.PRELOADED_BIOS || typeof FS === 'undefined') return;
+      
+      try {
+        // Verifica se /offline esiste
+        FS.lookupPath("/offline");
+        
+        // Directory esiste, inietta BIOS
+        FS.writeFile(window.PRELOADED_BIOS.path, window.PRELOADED_BIOS.data);
+        console.log(`✅ BIOS iniettato: ${window.PRELOADED_BIOS.path}`);
+        
+        const verify = FS.readFile(window.PRELOADED_BIOS.path);
+        console.log(`✅ BIOS verificato: ${verify.length} bytes`);
+      } catch (e) {
+        // /offline non esiste ancora, riprova tra poco
+        if (e.errno === 44) {
+          setTimeout(injectBIOS, 100);
+        } else {
+          console.error("❌ Errore BIOS:", e);
+        }
+      }
+    };
+    
+    // Inizia a provare dopo 100ms
+    setTimeout(injectBIOS, 100);
+  },
+  printErr: function(text) {
+    if (!text.includes('warning') && !text.includes('Uncaught')) {
+      console.error("SkyEmu:", text);
+    }
+  }
+};
+
+// Gestisci errori globali
+window.addEventListener('error', function(e) {
+  if (e.filename && e.filename.includes('SkyEmu')) {
+    e.preventDefault();
+    return true;
+  }
+});
+</script>
+
+<!-- Core emulatore -->
+<script src="https://web.skyemu.app/SkyEmu.js"></script>
+
+<!-- Carica ROM -->
+<script>
 function setFileInput(fileInput, file) {
   const dt = new DataTransfer();
   dt.items.add(file);
@@ -116,71 +159,29 @@ function setFileInput(fileInput, file) {
   fileInput.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function goFullscreen() {
-  const el = document.documentElement;
-  if (el.requestFullscreen) el.requestFullscreen();
-  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
-  else if (el.msRequestFullscreen) el.msRequestFullscreen();
-}
-
-// ✅ Nuovo sistema BIOS compatibile con FS.writeFile
-async function loadBiosFiles(biosUrls) {
-  const Module = await waitForModule();
-  if (!Module || !Module.FS || !Module.FS.writeFile) {
-    console.warn("Modulo FS non disponibile o non compatibile.");
-    return;
-  }
-
-  try { Module.FS.mkdirTree("/offline"); } catch {}
-
-  for (const url of biosUrls) {
-    try {
-      const data = await fetchBinary(url);
-      const fileName = "/offline/" + url.split("/").pop();
-      Module.FS.writeFile(fileName, data);
-      console.log("✅ BIOS caricato:", fileName);
-    } catch (err) {
-      console.warn("⚠️ Errore BIOS:", err);
-    }
-  }
-}
-
-async function launchROM(url) {
-  setStatus("Preparazione...");
-
-  const Module = await waitForModule();
-  if (!Module) {
-    setStatus("Errore: Modulo non trovato!");
-    return;
-  }
-
-  // Carica BIOS prima della ROM
-  if (biosParam) {
-    const biosList = biosParam.split(",");
-    await loadBiosFiles(biosList);
-  }
-
+async function launchROM() {
   try {
-    setStatus("Caricamento ROM " + title + "...");
-    const romData = await fetchBinary(url);
-    const filename = url.split("/").pop();
+    setStatus(`Caricamento ${title}...`);
+    const romData = await fetchBinary(romURL);
+    const filename = romURL.split("/").pop().replace(/%20/g, " ");
+    
+    console.log(`📦 ROM: ${filename} (${romData.length} bytes)`);
+
     const blob = new Blob([romData], { type: "application/octet-stream" });
     const file = new File([blob], filename);
     setFileInput(document.getElementById("fileInput0"), file);
 
-    // Nasconde status e forza schermo intero
     setTimeout(() => {
       STATUS.style.display = "none";
-      goFullscreen();
-    }, 1200);
+      console.log("✅ Gioco avviato");
+    }, 2000);
   } catch (err) {
-    setStatus("Errore: " + err.message);
-    console.error(err);
+    setStatus("❌ Errore: " + err.message);
+    console.error("💥 Errore:", err);
   }
 }
 
-launchROM(romURL);
+launchROM();
 </script>
 </body>
 </html>
