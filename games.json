@@ -4,7 +4,6 @@
     "title": "Pokémon Versione Smeraldo",
     "system": "gba",
     "region": "EUR",
-    "tags": ["pokemon", "rpg", "nintendo"],
     "url": "https://files.catbox.moe/msei8x.gba"
   },
   {
@@ -12,7 +11,6 @@
     "title": "Pokémon Cristallo Versione",
     "system": "gbc",
     "region": "EUR",
-    "tags": ["pokemon", "rpg", "color"],
     "url": "https://github.com/AlexBlackmore/roms/raw/master/gbc/Pokemon%20-%20Crystal%20Version%20%28Europe%29.zip"
   },
   {
@@ -20,8 +18,8 @@
     "title": "Super Mario Land",
     "system": "gb",
     "region": "EUR",
-    "tags": ["mario", "platform", "classic"],
     "url": "https://github.com/AlexBlackmore/roms/raw/master/gb/Super%20Mario%20Land%20%28Europe%29.zip"
   }
 ]
+
 
