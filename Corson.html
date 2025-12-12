@@ -2,106 +2,249 @@
 <html lang="it">
 <head>
 <meta charset="utf-8" />
-<title>CORS Auto-Downloader (uso legale)</title>
+<title>Download...</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  body { font-family: system-ui, Arial; max-width: 780px; margin: 32px auto; padding: 0 16px; }
-  input, button, select { font-size: 15px; padding: 10px; width: 100%; box-sizing: border-box; margin-top: 8px; }
-  button { background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    font-family: system-ui, -apple-system, Arial; 
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  
+  /* Pagina principale per generare link */
+  .main-page {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    max-width: 600px;
+    width: 90%;
+  }
+  .main-page.hidden { display: none; }
+  
+  h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+  .small { font-size: 14px; color: #666; margin-bottom: 20px; display: block; }
+  
+  input, select, button { 
+    font-size: 15px; 
+    padding: 12px; 
+    width: 100%; 
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+    font-family: inherit;
+  }
+  
+  button { 
+    background: #0066cc; 
+    color: white; 
+    border: none; 
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
   button:hover { background: #0052a3; }
   button:disabled { background: #ccc; cursor: not-allowed; }
-  .share-section { margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; display: none; }
+  
+  .share-section { 
+    margin-top: 25px; 
+    padding: 20px; 
+    background: #e8f4fd; 
+    border-radius: 10px; 
+    display: none; 
+  }
   .share-section.show { display: block; }
-  .share-link { background: white; padding: 10px; border-radius: 4px; word-break: break-all; margin: 8px 0; font-family: monospace; font-size: 13px; }
-  .copy-btn { background: #28a745; padding: 8px 16px; width: auto; margin-top: 8px; }
+  .share-section h3 { color: #0066cc; margin-bottom: 10px; font-size: 18px; }
+  
+  .share-link { 
+    background: white; 
+    padding: 12px; 
+    border-radius: 6px; 
+    word-break: break-all; 
+    margin: 12px 0; 
+    font-family: monospace; 
+    font-size: 13px;
+    border: 1px solid #b3d9f2;
+  }
+  
+  .copy-btn { 
+    background: #28a745; 
+    padding: 10px 20px; 
+    width: auto; 
+    margin-top: 10px; 
+  }
   .copy-btn:hover { background: #218838; }
-  pre { background:#f4f4f4; padding:10px; white-space:pre-wrap; word-break:break-word; max-height: 400px; overflow-y: auto; }
-  .small { font-size: 13px; color: #555; }
-  .log { margin-top:12px; }
-  .status { padding: 12px; border-radius: 6px; margin: 12px 0; font-weight: 500; }
+  
+  .status { 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin: 15px 0; 
+    font-weight: 500; 
+  }
   .status.success { background: #d4edda; color: #155724; }
   .status.error { background: #f8d7da; color: #721c24; }
   .status.info { background: #d1ecf1; color: #0c5460; }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid #f3f3f3; border-top: 3px solid #0066cc; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
-  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  .auto-download-page { display: none; text-align: center; padding: 40px 20px; }
-  .auto-download-page.active { display: block; }
-  .main-page.hidden { display: none; }
-  .progress { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin: 20px 0; }
-  .progress-bar { height: 100%; background: linear-gradient(90deg, #0066cc, #00aaff); animation: progress 2s ease-in-out; }
-  @keyframes progress { 0% { width: 0%; } 100% { width: 100%; } }
+  
+  /* Pagina di download - MINIMALISTA */
+  .download-page {
+    display: none;
+    text-align: center;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 90%;
+  }
+  .download-page.active { display: block; }
+  
+  .download-icon { 
+    font-size: 64px; 
+    margin-bottom: 20px;
+    animation: bounce 1s ease-in-out infinite;
+  }
+  
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .download-page h2 { 
+    color: #333; 
+    font-size: 22px; 
+    margin-bottom: 15px; 
+  }
+  
+  .download-page p { 
+    color: #666; 
+    font-size: 15px; 
+    line-height: 1.6; 
+  }
+  
+  .spinner { 
+    display: inline-block; 
+    width: 40px; 
+    height: 40px; 
+    border: 4px solid #f3f3f3; 
+    border-top: 4px solid #0066cc; 
+    border-radius: 50%; 
+    animation: spin 1s linear infinite; 
+    margin: 20px auto;
+  }
+  
+  @keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+  }
+  
+  .success-icon {
+    font-size: 64px;
+    color: #28a745;
+    margin-bottom: 15px;
+  }
+  
+  .error-icon {
+    font-size: 64px;
+    color: #dc3545;
+    margin-bottom: 15px;
+  }
+  
+  .file-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .file-info strong {
+    color: #333;
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  /* Log minimale (solo per debug se necessario) */
+  .debug-log {
+    display: none; /* Nascosto di default */
+    margin-top: 20px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+    font-family: monospace;
+    text-align: left;
+  }
 </style>
 </head>
 <body>
+  <!-- PAGINA PRINCIPALE: Generazione link -->
   <div class="main-page" id="mainPage">
     <h1>🚀 CORS Auto-Downloader</h1>
-    <p class="small">Inserisci l'URL del file e genera un link condivisibile. Chi aprirà il link vedrà partire il download automaticamente! (Solo contenuti legali)</p>
+    <span class="small">Genera un link di download diretto che funziona ovunque!</span>
 
     <input id="url" placeholder="https://example.com/file.ext" />
     <select id="proxyMode">
-      <option value="sequential">Prova tutti i proxy in sequenza</option>
+      <option value="sequential">Prova tutti i proxy (consigliato)</option>
       <option value="first">Usa solo il primo proxy</option>
     </select>
-    <button id="start">Genera link condivisibile</button>
+    <button id="start">📤 Genera link di download</button>
 
     <div class="share-section" id="shareSection">
-      <h3>📤 Condividi questo link</h3>
-      <p class="small">Copia questo link per condividerlo con altri. Il download partirà automaticamente!</p>
+      <h3>✅ Link pronto!</h3>
+      <p class="small">Copia e condividi questo link. Il download partirà automaticamente!</p>
       <div class="share-link" id="shareLink"></div>
       <button class="copy-btn" id="copyBtn">📋 Copia link</button>
     </div>
 
     <div id="status"></div>
-    <div class="log" id="log"></div>
   </div>
 
-  <div class="auto-download-page" id="autoDownloadPage">
-    <h1>📥 Download in corso...</h1>
-    <div class="progress">
-      <div class="progress-bar"></div>
+  <!-- PAGINA DI DOWNLOAD: Minimalista e veloce -->
+  <div class="download-page" id="downloadPage">
+    <div id="downloadContent">
+      <div class="download-icon">📥</div>
+      <div class="spinner"></div>
+      <h2>Preparazione download...</h2>
+      <p id="downloadStatus">Attendere...</p>
+      <div class="file-info" id="fileInfo" style="display:none;"></div>
     </div>
-    <p id="autoStatus" style="font-size: 16px; margin: 20px 0;"></p>
-    <div class="log" id="autoLog"></div>
+    <div class="debug-log" id="debugLog"></div>
   </div>
 
 <script>
 (function(){
+  // Proxy CORS (ordinati per affidabilità)
   const proxies = [
-    { name: "corsproxy.io", build: url => "https://corsproxy.io/?" + url },
-    { name: "cors-anywhere", build: url => "https://cors-anywhere.herokuapp.com/" + url },
-    { name: "thingproxy", build: url => "https://thingproxy.freeboard.io/fetch/" + url },
-    { name: "allorigins", build: url => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url) }
+    { name: "corsproxy.io", build: url => "https://corsproxy.io/?" + encodeURIComponent(url) },
+    { name: "allorigins", build: url => "https://api.allorigins.win/raw?url=" + encodeURIComponent(url) },
+    { name: "thingproxy", build: url => "https://thingproxy.freeboard.io/fetch/" + url }
   ];
 
-  const logEl = document.getElementById("log");
-  const statusEl = document.getElementById("status");
-  const shareSection = document.getElementById("shareSection");
-  const shareLinkEl = document.getElementById("shareLink");
+  const mainPage = document.getElementById("mainPage");
+  const downloadPage = document.getElementById("downloadPage");
   const urlInput = document.getElementById("url");
   const startBtn = document.getElementById("start");
-  const mainPage = document.getElementById("mainPage");
-  const autoDownloadPage = document.getElementById("autoDownloadPage");
-  const autoStatusEl = document.getElementById("autoStatus");
-  const autoLogEl = document.getElementById("autoLog");
-
-  function log(...args){
-    const t = document.createElement("pre");
-    t.textContent = args.join(" ");
-    logEl.prepend(t);
-  }
-
-  function autoLog(...args){
-    const t = document.createElement("pre");
-    t.textContent = args.join(" ");
-    autoLogEl.prepend(t);
-  }
+  const shareSection = document.getElementById("shareSection");
+  const shareLinkEl = document.getElementById("shareLink");
+  const statusEl = document.getElementById("status");
+  const downloadStatusEl = document.getElementById("downloadStatus");
+  const fileInfoEl = document.getElementById("fileInfo");
+  const debugLogEl = document.getElementById("debugLog");
 
   function setStatus(message, type = "info") {
     statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
   }
 
-  function setAutoStatus(message) {
-    autoStatusEl.innerHTML = message;
+  function debugLog(message) {
+    // Log silenzioso (solo in console, non mostrato all'utente)
+    console.log(message);
   }
 
   function extractFilename(url, response) {
@@ -115,13 +258,13 @@
     try {
       const u = new URL(url);
       const seg = u.pathname.split("/").filter(Boolean).pop();
-      if (seg) return seg;
+      if (seg) return decodeURIComponent(seg);
     } catch(e){}
     return "download.bin";
   }
 
   async function fetchWithTimeout(resource, options = {}) {
-    const { timeout = 20000 } = options;
+    const { timeout = 30000 } = options;
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
@@ -134,52 +277,65 @@
     }
   }
 
-  async function tryProxy(proxy, originalUrl, isAuto = false) {
+  async function tryProxy(proxy, originalUrl) {
     const proxUrl = proxy.build(originalUrl);
-    const logFunc = isAuto ? autoLog : log;
-    logFunc(`[Prova] ${proxy.name}`);
+    debugLog(`Tentativo con ${proxy.name}...`);
+    
     try {
-      const headers = { "x-requested-with": "XMLHttpRequest" };
-      const resp = await fetchWithTimeout(proxUrl, { method: "GET", mode: "cors", headers, timeout: 25000 });
+      const resp = await fetchWithTimeout(proxUrl, { 
+        method: "GET", 
+        mode: "cors",
+        headers: { "x-requested-with": "XMLHttpRequest" },
+        timeout: 30000 
+      });
 
       if (!resp.ok) {
-        logFunc(`[Errore] ${proxy.name} risponde con status ${resp.status}`);
-        return { ok:false, reason: `HTTP ${resp.status}` };
+        debugLog(`${proxy.name}: HTTP ${resp.status}`);
+        return { ok: false, reason: `HTTP ${resp.status}` };
       }
 
       const ct = resp.headers.get("content-type") || "";
       const blob = await resp.blob();
 
-      if ((ct.includes("text/html") || ct.includes("application/json") || ct.includes("text/plain")) && blob.size < 200000) {
+      // Verifica se è una pagina di errore
+      if ((ct.includes("text/html") || ct.includes("application/json")) && blob.size < 100000) {
         const txt = await blob.text();
-        logFunc(`[Avviso] ${proxy.name} ha restituito una pagina testuale`);
-        return { ok:false, reason: "Probabile pagina di errore" };
+        if (txt.includes("error") || txt.includes("Error") || txt.includes("<html")) {
+          debugLog(`${proxy.name}: Pagina di errore rilevata`);
+          return { ok: false, reason: "Errore dal proxy" };
+        }
       }
 
       const filename = extractFilename(originalUrl, resp);
-      return { ok:true, blob, filename, contentType: ct, proxUrl };
+      debugLog(`${proxy.name}: Successo! File: ${filename}`);
+      return { ok: true, blob, filename, size: blob.size };
     } catch (err) {
-      logFunc(`[Errore] ${proxy.name}: ${err && err.name ? err.name : err}`);
-      return { ok:false, reason: err && err.message ? err.message : String(err) };
+      debugLog(`${proxy.name}: ${err.message || err}`);
+      return { ok: false, reason: err.message || String(err) };
     }
   }
 
-  function doDownload(blob, filename) {
+  function triggerDownload(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = filename || "download.bin";
+    a.download = filename;
+    a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    
+    // Cleanup
+    setTimeout(() => {
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, 100);
   }
 
   function generateShareableLink(fileUrl, mode) {
     const params = new URLSearchParams();
     params.set("url", fileUrl);
     params.set("mode", mode);
-    params.set("auto", "1");
+    params.set("d", "1"); // d = direct download
     return window.location.origin + window.location.pathname + "?" + params.toString();
   }
 
@@ -189,8 +345,7 @@
     shareSection.classList.add("show");
   }
 
-  function generateShareLink() {
-    logEl.innerHTML = "";
+  function generateLink() {
     statusEl.innerHTML = "";
     shareSection.classList.remove("show");
 
@@ -207,78 +362,98 @@
 
     const mode = document.getElementById("proxyMode").value;
     showShareLink(originalUrl, mode);
-    setStatus("✅ Link generato! Ora puoi copiarlo e condividerlo.", "success");
-    log(`[Link generato] Pronto per la condivisione`);
+    setStatus("✅ Link generato! Condividilo per un download diretto.", "success");
   }
 
-  async function autoDownload(fileUrl, mode) {
+  async function directDownload(fileUrl, mode) {
+    // Mostra pagina di download minimalista
     mainPage.classList.add("hidden");
-    autoDownloadPage.classList.add("active");
+    downloadPage.classList.add("active");
     
-    setAutoStatus(`🔄 Avvio download automatico...`);
-    autoLog(`[Auto-Download] Elaborazione: ${fileUrl}`);
+    downloadStatusEl.textContent = "Connessione ai server...";
 
-    for (const p of proxies) {
-      const result = await tryProxy(p, fileUrl, true);
+    let proxyList = mode === "first" ? [proxies[0]] : proxies;
+
+    for (const proxy of proxyList) {
+      downloadStatusEl.textContent = `Tentativo download via ${proxy.name}...`;
+      
+      const result = await tryProxy(proxy, fileUrl);
+      
       if (result.ok) {
-        autoLog(`[✓ Successo] Download tramite ${p.name}`);
-        setAutoStatus(`✅ Download avviato! File: ${result.filename}`);
-        doDownload(result.blob, result.filename);
+        // SUCCESSO - Avvia download
+        downloadStatusEl.textContent = "Download avviato!";
+        triggerDownload(result.blob, result.filename);
         
-        setTimeout(() => {
-          setAutoStatus(`✅ Download completato! Puoi chiudere questa pagina.`);
-        }, 1000);
+        // Mostra successo
+        document.getElementById("downloadContent").innerHTML = `
+          <div class="success-icon">✅</div>
+          <h2>Download avviato!</h2>
+          <p>Il file sta per essere scaricato dal tuo browser.</p>
+          <div class="file-info">
+            <strong>📄 ${result.filename}</strong>
+            <div>Dimensione: ${(result.size / 1024 / 1024).toFixed(2)} MB</div>
+          </div>
+          <p style="margin-top: 20px; color: #999; font-size: 13px;">Puoi chiudere questa pagina</p>
+        `;
+        
         return;
-      } else {
-        autoLog(`[✗ Fallito] ${p.name}: ${result.reason || "sconosciuto"}`);
       }
-      if (mode === "first") break;
     }
     
-    setAutoStatus("❌ Impossibile scaricare il file. Verifica l'URL o riprova più tardi.");
-    autoLog("[Fine] Tutti i proxy hanno fallito");
+    // Tutti i proxy hanno fallito
+    document.getElementById("downloadContent").innerHTML = `
+      <div class="error-icon">❌</div>
+      <h2>Download non riuscito</h2>
+      <p>Impossibile scaricare il file. Possibili cause:</p>
+      <ul style="text-align: left; margin: 15px 0; padding-left: 20px; color: #666;">
+        <li>Il file non è più disponibile</li>
+        <li>L'URL non è corretto</li>
+        <li>Il server blocca i proxy</li>
+      </ul>
+      <p style="margin-top: 20px;">
+        <button onclick="window.location.href='${window.location.pathname}'" style="padding: 10px 20px; background: #0066cc; color: white; border: none; border-radius: 6px; cursor: pointer;">
+          🔄 Riprova
+        </button>
+      </p>
+    `;
   }
 
-  // Gestione click bottone - genera solo il link
-  startBtn.addEventListener("click", () => generateShareLink());
-
-  // Gestione invio con Enter
+  // Event listeners
+  startBtn.addEventListener("click", generateLink);
   urlInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") generateShareLink();
+    if (e.key === "Enter") generateLink();
   });
 
-  // Copia link condivisibile
   document.getElementById("copyBtn").addEventListener("click", async () => {
     const link = shareLinkEl.textContent;
     try {
       await navigator.clipboard.writeText(link);
       const btn = document.getElementById("copyBtn");
       const originalText = btn.textContent;
-      btn.textContent = "✓ Copiato!";
+      btn.textContent = "✅ Copiato!";
       setTimeout(() => { btn.textContent = originalText; }, 2000);
     } catch(e) {
       const textarea = document.createElement("textarea");
       textarea.value = link;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
       textarea.remove();
-      alert("Link copiato negli appunti!");
     }
   });
 
-  // Auto-start se c'è il parametro auto nell'URL
+  // AUTO-DOWNLOAD quando si apre un link condiviso
   window.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const fileUrl = params.get("url");
     const mode = params.get("mode") || "sequential";
-    const auto = params.get("auto");
+    const isDirect = params.get("d");
 
-    if (fileUrl && auto === "1") {
-      // Avvia automaticamente il download senza mostrare la pagina principale
-      setTimeout(() => {
-        autoDownload(fileUrl, mode);
-      }, 500);
+    if (fileUrl && isDirect === "1") {
+      // Avvia download diretto SUBITO
+      directDownload(fileUrl, mode);
     }
   });
 
