@@ -24,28 +24,45 @@
   .status.info { background: #d1ecf1; color: #0c5460; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid #f3f3f3; border-top: 3px solid #0066cc; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .auto-download-page { display: none; text-align: center; padding: 40px 20px; }
+  .auto-download-page.active { display: block; }
+  .main-page.hidden { display: none; }
+  .progress { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin: 20px 0; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #0066cc, #00aaff); animation: progress 2s ease-in-out; }
+  @keyframes progress { 0% { width: 0%; } 100% { width: 100%; } }
 </style>
 </head>
 <body>
-  <h1>🚀 CORS Auto-Downloader</h1>
-  <p class="small">Inserisci l'URL del file e genera un link condivisibile. Chi aprirà il link vedrà partire il download automaticamente! (Solo contenuti legali)</p>
+  <div class="main-page" id="mainPage">
+    <h1>🚀 CORS Auto-Downloader</h1>
+    <p class="small">Inserisci l'URL del file e genera un link condivisibile. Chi aprirà il link vedrà partire il download automaticamente! (Solo contenuti legali)</p>
 
-  <input id="url" placeholder="https://example.com/file.ext" />
-  <select id="proxyMode">
-    <option value="sequential">Prova tutti i proxy in sequenza</option>
-    <option value="first">Usa solo il primo proxy</option>
-  </select>
-  <button id="start">Genera link condivisibile</button>
+    <input id="url" placeholder="https://example.com/file.ext" />
+    <select id="proxyMode">
+      <option value="sequential">Prova tutti i proxy in sequenza</option>
+      <option value="first">Usa solo il primo proxy</option>
+    </select>
+    <button id="start">Genera link condivisibile</button>
 
-  <div class="share-section" id="shareSection">
-    <h3>📤 Condividi questo link</h3>
-    <p class="small">Copia questo link per condividerlo con altri. Il download partirà automaticamente!</p>
-    <div class="share-link" id="shareLink"></div>
-    <button class="copy-btn" id="copyBtn">📋 Copia link</button>
+    <div class="share-section" id="shareSection">
+      <h3>📤 Condividi questo link</h3>
+      <p class="small">Copia questo link per condividerlo con altri. Il download partirà automaticamente!</p>
+      <div class="share-link" id="shareLink"></div>
+      <button class="copy-btn" id="copyBtn">📋 Copia link</button>
+    </div>
+
+    <div id="status"></div>
+    <div class="log" id="log"></div>
   </div>
 
-  <div id="status"></div>
-  <div class="log" id="log"></div>
+  <div class="auto-download-page" id="autoDownloadPage">
+    <h1>📥 Download in corso...</h1>
+    <div class="progress">
+      <div class="progress-bar"></div>
+    </div>
+    <p id="autoStatus" style="font-size: 16px; margin: 20px 0;"></p>
+    <div class="log" id="autoLog"></div>
+  </div>
 
 <script>
 (function(){
@@ -62,6 +79,10 @@
   const shareLinkEl = document.getElementById("shareLink");
   const urlInput = document.getElementById("url");
   const startBtn = document.getElementById("start");
+  const mainPage = document.getElementById("mainPage");
+  const autoDownloadPage = document.getElementById("autoDownloadPage");
+  const autoStatusEl = document.getElementById("autoStatus");
+  const autoLogEl = document.getElementById("autoLog");
 
   function log(...args){
     const t = document.createElement("pre");
@@ -69,8 +90,18 @@
     logEl.prepend(t);
   }
 
+  function autoLog(...args){
+    const t = document.createElement("pre");
+    t.textContent = args.join(" ");
+    autoLogEl.prepend(t);
+  }
+
   function setStatus(message, type = "info") {
     statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+  }
+
+  function setAutoStatus(message) {
+    autoStatusEl.innerHTML = message;
   }
 
   function extractFilename(url, response) {
@@ -103,15 +134,16 @@
     }
   }
 
-  async function tryProxy(proxy, originalUrl) {
+  async function tryProxy(proxy, originalUrl, isAuto = false) {
     const proxUrl = proxy.build(originalUrl);
-    log(`[Prova] ${proxy.name} -> ${proxUrl.substring(0, 80)}...`);
+    const logFunc = isAuto ? autoLog : log;
+    logFunc(`[Prova] ${proxy.name}`);
     try {
       const headers = { "x-requested-with": "XMLHttpRequest" };
       const resp = await fetchWithTimeout(proxUrl, { method: "GET", mode: "cors", headers, timeout: 25000 });
 
       if (!resp.ok) {
-        log(`[Errore] ${proxy.name} risponde con status ${resp.status}`);
+        logFunc(`[Errore] ${proxy.name} risponde con status ${resp.status}`);
         return { ok:false, reason: `HTTP ${resp.status}` };
       }
 
@@ -120,15 +152,14 @@
 
       if ((ct.includes("text/html") || ct.includes("application/json") || ct.includes("text/plain")) && blob.size < 200000) {
         const txt = await blob.text();
-        log(`[Avviso] ${proxy.name} ha restituito una pagina testuale`);
-        log(txt.slice(0,500));
+        logFunc(`[Avviso] ${proxy.name} ha restituito una pagina testuale`);
         return { ok:false, reason: "Probabile pagina di errore" };
       }
 
       const filename = extractFilename(originalUrl, resp);
       return { ok:true, blob, filename, contentType: ct, proxUrl };
     } catch (err) {
-      log(`[Errore] ${proxy.name}: ${err && err.name ? err.name : err}`);
+      logFunc(`[Errore] ${proxy.name}: ${err && err.name ? err.name : err}`);
       return { ok:false, reason: err && err.message ? err.message : String(err) };
     }
   }
@@ -142,7 +173,6 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
-    log(`[✓ Fatto] Download avviato: ${filename} (${Math.round(blob.size/1024)} KB)`);
   }
 
   function generateShareableLink(fileUrl, mode) {
@@ -181,44 +211,32 @@
     log(`[Link generato] Pronto per la condivisione`);
   }
 
-  async function startDownload() {
-    logEl.innerHTML = "";
-    statusEl.innerHTML = "";
-
-    const originalUrl = urlInput.value.trim();
-    if (!originalUrl) { 
-      setStatus("❌ Inserisci un URL valido", "error");
-      return; 
-    }
-
-    try { new URL(originalUrl); } catch(e) { 
-      setStatus("❌ URL non valido", "error");
-      return; 
-    }
-
-    const mode = document.getElementById("proxyMode").value;
-
-    setStatus(`<span class="spinner"></span> Download in corso...`, "info");
-    startBtn.disabled = true;
-    log(`[Inizio] Tentativo download: ${originalUrl}`);
+  async function autoDownload(fileUrl, mode) {
+    mainPage.classList.add("hidden");
+    autoDownloadPage.classList.add("active");
+    
+    setAutoStatus(`🔄 Avvio download automatico...`);
+    autoLog(`[Auto-Download] Elaborazione: ${fileUrl}`);
 
     for (const p of proxies) {
-      const result = await tryProxy(p, originalUrl);
+      const result = await tryProxy(p, fileUrl, true);
       if (result.ok) {
-        log(`[✓ Successo] Proxy funzionante: ${p.name}`);
-        setStatus(`✅ Download completato con successo tramite ${p.name}!`, "success");
+        autoLog(`[✓ Successo] Download tramite ${p.name}`);
+        setAutoStatus(`✅ Download avviato! File: ${result.filename}`);
         doDownload(result.blob, result.filename);
-        startBtn.disabled = false;
+        
+        setTimeout(() => {
+          setAutoStatus(`✅ Download completato! Puoi chiudere questa pagina.`);
+        }, 1000);
         return;
       } else {
-        log(`[✗ Fallito] ${p.name}: ${result.reason || "sconosciuto"}`);
+        autoLog(`[✗ Fallito] ${p.name}: ${result.reason || "sconosciuto"}`);
       }
       if (mode === "first") break;
     }
     
-    setStatus("❌ Nessun proxy ha funzionato. Verifica l'URL o riprova più tardi.", "error");
-    log("[Fine] Tutti i proxy hanno fallito");
-    startBtn.disabled = false;
+    setAutoStatus("❌ Impossibile scaricare il file. Verifica l'URL o riprova più tardi.");
+    autoLog("[Fine] Tutti i proxy hanno fallito");
   }
 
   // Gestione click bottone - genera solo il link
@@ -239,7 +257,6 @@
       btn.textContent = "✓ Copiato!";
       setTimeout(() => { btn.textContent = originalText; }, 2000);
     } catch(e) {
-      // Fallback per browser che non supportano clipboard API
       const textarea = document.createElement("textarea");
       textarea.value = link;
       document.body.appendChild(textarea);
@@ -254,18 +271,13 @@
   window.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const fileUrl = params.get("url");
-    const mode = params.get("mode");
+    const mode = params.get("mode") || "sequential";
     const auto = params.get("auto");
 
     if (fileUrl && auto === "1") {
-      urlInput.value = fileUrl;
-      if (mode) {
-        document.getElementById("proxyMode").value = mode;
-      }
-      // Avvia automaticamente dopo un piccolo delay
+      // Avvia automaticamente il download senza mostrare la pagina principale
       setTimeout(() => {
-        setStatus("🔄 Download automatico avviato dal link condiviso...", "info");
-        startDownload();
+        autoDownload(fileUrl, mode);
       }, 500);
     }
   });
