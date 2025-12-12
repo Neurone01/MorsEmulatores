@@ -1,25 +1,54 @@
 [
   {
     "id": "pokemon_emerald",
-    "title": "Pokémon Versione Smeraldo",
+    "title": "Pokemon Smeraldo",
     "system": "gba",
     "region": "EUR",
     "url": "https://files.catbox.moe/msei8x.gba"
   },
   {
     "id": "pokemon_crystal",
-    "title": "Pokémon Cristallo Versione",
+    "title": "Pokemon Cristallo",
     "system": "gbc",
     "region": "EUR",
-    "url": "https://github.com/AlexBlackmore/roms/raw/master/gbc/Pokemon%20-%20Crystal%20Version%20%28Europe%29.zip"
+    "url": "https://spoo.me/pvgywS"
   },
-  {
-    "id": "super_mario_land",
-    "title": "Super Mario Land",
+ {
+    "id": "pokemon_argento",
+    "title": "Pokemon Argento",
+    "system": "gbc",
+    "region": "EUR",
+    "url": "https://spoo.me/8UGbnI"
+  },
+   {
+    "id": "pokemon_giallo",
+    "title": "Pokemon Giallo",
+    "system": "gbc",
+    "region": "EUR",
+    "url": "https://spoo.me/6xGi6a"
+  },
+     {
+    "id": "pokemon_rosso",
+    "title": "Pokemon Rosso",
     "system": "gb",
     "region": "EUR",
-    "url": "https://github.com/AlexBlackmore/roms/raw/master/gb/Super%20Mario%20Land%20%28Europe%29.zip"
+    "url": "https://spoo.me/L5msLB"
+  },
+    {
+    "id": "pokemon_verde",
+    "title": "Pokemon Verde",
+    "system": "gba",
+    "region": "EUR",
+    "url": "https://spoo.me/M5zDPZ"
+  },
+    {
+    "id": "pokemon_zaffiro",
+    "title": "Pokemon Zaffiro",
+    "system": "gba",
+    "region": "EUR",
+    "url": "https://spoo.me/04gDu9"
   }
 ]
+
 
 
