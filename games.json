@@ -6,49 +6,36 @@
     "region": "EUR",
     "url": "https://files.catbox.moe/msei8x.gba"
   },
-  {
-    "id": "pokemon_crystal",
-    "title": "Pokemon Cristallo",
-    "system": "gbc",
-    "region": "EUR",
-    "url": "https://spoo.me/pvgywS"
-  },
  {
     "id": "pokemon_argento",
     "title": "Pokemon Argento",
     "system": "gbc",
     "region": "EUR",
-    "url": "https://spoo.me/8UGbnI"
-  },
-   {
-    "id": "pokemon_giallo",
-    "title": "Pokemon Giallo",
-    "system": "gbc",
-    "region": "EUR",
-    "url": "https://spoo.me/6xGi6a"
+    "url": "https://rebrand.ly/PkmnArg"
   },
      {
     "id": "pokemon_rosso",
     "title": "Pokemon Rosso",
     "system": "gb",
     "region": "EUR",
-    "url": "https://spoo.me/L5msLB"
+    "url": "https://rebrand.ly/PkmnRos"
   },
     {
     "id": "pokemon_verde",
     "title": "Pokemon Verde",
     "system": "gba",
     "region": "EUR",
-    "url": "https://spoo.me/M5zDPZ"
+    "url": "https://rebrand.ly/PkmnVF"
   },
     {
     "id": "pokemon_zaffiro",
     "title": "Pokemon Zaffiro",
     "system": "gba",
     "region": "EUR",
-    "url": "https://spoo.me/04gDu9"
+    "url": "https://rebrand.ly/PkmnZaf"
   }
 ]
+
 
 
 
