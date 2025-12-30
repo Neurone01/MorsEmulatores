@@ -11,30 +11,31 @@
     "title": "Pokemon Argento",
     "system": "gbc",
     "region": "EUR",
-    "url": "https://rebrand.ly/PkmnArg"
+    "url": "https://pixeldrain.com/api/file/SoH9rpKi?download"
   },
      {
     "id": "pokemon_rosso",
     "title": "Pokemon Rosso",
     "system": "gb",
     "region": "EUR",
-    "url": "https://rebrand.ly/PkmnRos"
+    "url": "https://pixeldrain.com/api/file/vZsoZvJk?download"
   },
     {
     "id": "pokemon_verde",
     "title": "Pokemon Verde",
     "system": "gba",
     "region": "EUR",
-    "url": "https://rebrand.ly/PkmnVF"
+    "url": "https://pixeldrain.com/api/file/Q9ndZv13?download"
   },
     {
     "id": "pokemon_zaffiro",
     "title": "Pokemon Zaffiro",
     "system": "gba",
     "region": "EUR",
-    "url": "https://rebrand.ly/PkmnZaf"
+    "url": "https://pixeldrain.com/api/file/aWV3UcJJ?download"
   }
 ]
+
 
 
 
